@@ -1,0 +1,66 @@
+import express from 'express';
+import { createServer } from 'http';
+import { Server as SocketServer } from 'socket.io';
+import cors from 'cors';
+import helmet from 'helmet';
+import dotenv from 'dotenv';
+
+import { authRouter } from './routes/auth';
+import { hackathonsRouter } from './routes/hackathons';
+import { teamsRouter } from './routes/teams';
+import { coordinatorsRouter } from './routes/coordinators';
+import { messagesRouter } from './routes/messages';
+import { metricsRouter, activityRouter, sheetsRouter, certificatesRouter } from './routes/other';
+
+import { errorHandler } from './middleware/errorHandler';
+import { apiLimiter } from './middleware/rateLimiter';
+import { setupSocketHandlers } from './lib/socket';
+import { logger } from './lib/logger';
+
+dotenv.config();
+
+const app = express();
+const httpServer = createServer(app);
+
+export const io = new SocketServer(httpServer, {
+  cors: {
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    methods: ['GET', 'POST'],
+    credentials: true,
+  },
+});
+
+// ─── Middleware ───────────────────────────────────────────────────────────────
+app.use(helmet({ contentSecurityPolicy: false }));
+app.use(cors({
+  origin: process.env.CLIENT_URL || 'http://localhost:5173',
+  credentials: true,
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use('/api', apiLimiter);
+
+// ─── Routes ───────────────────────────────────────────────────────────────────
+app.use('/api/auth', authRouter);
+app.use('/api/hackathons', hackathonsRouter);
+app.use('/api/hackathons/:hackathonId/teams', teamsRouter);
+app.use('/api/hackathons/:hackathonId/coordinators', coordinatorsRouter);
+app.use('/api/hackathons/:hackathonId/messages', messagesRouter);
+app.use('/api/hackathons/:hackathonId/certificates', certificatesRouter);
+app.use('/api/hackathons/:hackathonId/metrics', metricsRouter);
+app.use('/api/hackathons/:hackathonId/activity', activityRouter);
+app.use('/api/hackathons/:hackathonId/sheets', sheetsRouter);
+
+app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+
+app.use(errorHandler);
+
+// ─── Socket.io ────────────────────────────────────────────────────────────────
+setupSocketHandlers(io);
+
+// ─── Start ────────────────────────────────────────────────────────────────────
+const PORT = process.env.PORT || 4000;
+httpServer.listen(PORT, () => {
+  logger.info(`🚀 Nexora server on port ${PORT}`);
+});
+
+export default app;

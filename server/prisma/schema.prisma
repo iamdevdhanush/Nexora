@@ -1,0 +1,236 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+// ─── User & Auth ──────────────────────────────────────────────────────────────
+model User {
+  id        String   @id @default(cuid())
+  name      String
+  email     String?  @unique
+  phone     String?  @unique
+  role      Role     @default(COORDINATOR)
+  avatarUrl String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  otpCodes       OtpCode[]
+  hackathons     Hackathon[]            @relation("HackathonCreator")
+  assignments    CoordinatorAssignment[]
+  sentMessages   Message[]
+  activityLogs   ActivityLog[]
+}
+
+model OtpCode {
+  id        String   @id @default(cuid())
+  code      String
+  contact   String   // email or phone
+  expiresAt DateTime
+  used      Boolean  @default(false)
+  createdAt DateTime @default(now())
+
+  user   User?   @relation(fields: [userId], references: [id])
+  userId String?
+}
+
+// ─── Hackathon ────────────────────────────────────────────────────────────────
+model Hackathon {
+  id          String          @id @default(cuid())
+  name        String
+  description String?
+  venue       String?
+  startDate   DateTime
+  endDate     DateTime
+  status      HackathonStatus @default(DRAFT)
+  maxTeams    Int?
+  logoUrl     String?
+  createdAt   DateTime        @default(now())
+  updatedAt   DateTime        @updatedAt
+
+  createdBy   User   @relation("HackathonCreator", fields: [createdById], references: [id])
+  createdById String
+
+  teams       Team[]
+  assignments CoordinatorAssignment[]
+  messages    Message[]
+  certificates Certificate[]
+  activityLogs ActivityLog[]
+}
+
+model CoordinatorAssignment {
+  id         String   @id @default(cuid())
+  assignedAt DateTime @default(now())
+
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  hackathonId String
+
+  user   User   @relation(fields: [userId], references: [id])
+  userId String
+
+  teams Team[] @relation("CoordinatorTeams")
+
+  @@unique([hackathonId, userId])
+}
+
+// ─── Team ─────────────────────────────────────────────────────────────────────
+model Team {
+  id             String     @id @default(cuid())
+  name           String
+  status         TeamStatus @default(REGISTERED)
+  room           String?
+  tableNumber    String?
+  projectName    String?
+  projectUrl     String?
+  notes          String?
+  leaderPhone    String?
+  checkInTime    DateTime?
+  submissionTime DateTime?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
+  hackathonId String
+
+  coordinator   CoordinatorAssignment? @relation("CoordinatorTeams", fields: [coordinatorId], references: [id])
+  coordinatorId String?
+
+  participants  Participant[]
+  messageRecipients MessageRecipient[]
+  certificates  Certificate[]
+
+  @@unique([hackathonId, name])
+}
+
+model Participant {
+  id       String  @id @default(cuid())
+  name     String
+  email    String?
+  phone    String?
+  isLeader Boolean @default(false)
+
+  team   Team   @relation(fields: [teamId], references: [id], onDelete: Cascade)
+  teamId String
+}
+
+// ─── Messaging ────────────────────────────────────────────────────────────────
+model Message {
+  id            String        @id @default(cuid())
+  content       String
+  channel       Channel
+  status        MsgStatus     @default(PENDING)
+  recipientType RecipientType
+  sentAt        DateTime      @default(now())
+
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id])
+  hackathonId String
+
+  sentBy   User   @relation(fields: [sentById], references: [id])
+  sentById String
+
+  recipients MessageRecipient[]
+}
+
+model MessageRecipient {
+  id     String    @id @default(cuid())
+  status MsgStatus @default(PENDING)
+  sentAt DateTime?
+  error  String?
+
+  message   Message @relation(fields: [messageId], references: [id])
+  messageId String
+
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
+}
+
+// ─── Certificates ─────────────────────────────────────────────────────────────
+model Certificate {
+  id              String      @id @default(cuid())
+  participantName String
+  email           String
+  type            CertType    @default(PARTICIPATION)
+  status          CertStatus  @default(PENDING)
+  pdfUrl          String?
+  generatedAt     DateTime?
+  sentAt          DateTime?
+  createdAt       DateTime    @default(now())
+
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id])
+  hackathonId String
+
+  team   Team   @relation(fields: [teamId], references: [id])
+  teamId String
+}
+
+// ─── Activity ─────────────────────────────────────────────────────────────────
+model ActivityLog {
+  id        String   @id @default(cuid())
+  action    String
+  metadata  Json?
+  teamId    String?
+  teamName  String?
+  timestamp DateTime @default(now())
+
+  hackathon   Hackathon @relation(fields: [hackathonId], references: [id])
+  hackathonId String
+
+  actor   User   @relation(fields: [actorId], references: [id])
+  actorId String
+}
+
+// ─── Enums ────────────────────────────────────────────────────────────────────
+enum Role {
+  SUPER_ADMIN
+  COORDINATOR
+}
+
+enum HackathonStatus {
+  DRAFT
+  ACTIVE
+  ENDED
+}
+
+enum TeamStatus {
+  REGISTERED
+  CHECKED_IN
+  ACTIVE
+  SUBMITTED
+  DISQUALIFIED
+}
+
+enum Channel {
+  WHATSAPP
+  SMS
+  INTERNAL
+}
+
+enum MsgStatus {
+  PENDING
+  QUEUED
+  SENT
+  FAILED
+}
+
+enum RecipientType {
+  ALL
+  SELECTED
+  SINGLE
+}
+
+enum CertType {
+  PARTICIPATION
+  WINNER
+  RUNNER_UP
+  SPECIAL
+}
+
+enum CertStatus {
+  PENDING
+  GENERATED
+  SENT
+  FAILED
+}

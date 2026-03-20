@@ -1,0 +1,42 @@
+import { useAuthStore } from '@/store/authStore';
+
+const BASE = '/api';
+
+class ApiError extends Error {
+  constructor(public status: number, message: string) {
+    super(message);
+  }
+}
+
+async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
+  const token = useAuthStore.getState().token;
+  const res = await fetch(`${BASE}${path}`, {
+    ...opts,
+    headers: {
+      'Content-Type': 'application/json',
+      ...(token ? { Authorization: `Bearer ${token}` } : {}),
+      ...opts.headers,
+    },
+  });
+
+  if (res.status === 401) {
+    useAuthStore.getState().logout();
+    throw new ApiError(401, 'Session expired');
+  }
+
+  if (!res.ok) {
+    const body = await res.json().catch(() => ({ error: 'Request failed' }));
+    throw new ApiError(res.status, body.error || body.message || 'Unknown error');
+  }
+
+  return res.json();
+}
+
+export const api = {
+  get: <T>(p: string) => request<T>(p),
+  post: <T>(p: string, d?: unknown) => request<T>(p, { method: 'POST', body: d ? JSON.stringify(d) : undefined }),
+  patch: <T>(p: string, d?: unknown) => request<T>(p, { method: 'PATCH', body: d ? JSON.stringify(d) : undefined }),
+  delete: <T>(p: string) => request<T>(p, { method: 'DELETE' }),
+};
+
+export { ApiError };
