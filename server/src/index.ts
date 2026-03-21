@@ -12,7 +12,6 @@ import { coordinatorsRouter } from './routes/coordinators';
 import { messagesRouter } from './routes/messages';
 import { metricsRouter, activityRouter, sheetsRouter, certificatesRouter } from './routes/other';
 import { inviteRouter } from './routes/invites';
-
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
 import { setupSocketHandlers } from './lib/socket';
@@ -23,29 +22,17 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
-// ─── CRITICAL: Trust proxy for rate limiter behind Render/Vercel/ngrok ────────
 app.set('trust proxy', 1);
 
 export const io = new SocketServer(httpServer, {
-  cors: {
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    methods: ['GET', 'POST'],
-    credentials: true,
-  },
+  cors: { origin: process.env.CLIENT_URL || 'http://localhost:5173', methods: ['GET', 'POST'], credentials: true },
 });
 
-// ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(
-  cors({
-    origin: process.env.CLIENT_URL || 'http://localhost:5173',
-    credentials: true,
-  })
-);
+app.use(cors({ origin: process.env.CLIENT_URL || 'http://localhost:5173', credentials: true }));
 app.use(express.json({ limit: '10mb' }));
 app.use('/api', apiLimiter);
 
-// ─── Routes ───────────────────────────────────────────────────────────────────
 app.use('/api/auth', authRouter);
 app.use('/api/hackathons', hackathonsRouter);
 app.use('/api/hackathons/:hackathonId/teams', teamsRouter);
@@ -57,26 +44,15 @@ app.use('/api/hackathons/:hackathonId/activity', activityRouter);
 app.use('/api/hackathons/:hackathonId/sheets', sheetsRouter);
 app.use('/api/invites', inviteRouter);
 
-app.get('/health', (_, res) =>
-  res.json({ status: 'ok', ts: new Date().toISOString() })
-);
-
-// 404 fallback
-app.use((req, res) => {
-  res.status(404).json({ error: `Not found: ${req.method} ${req.path}` });
-});
-
+app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+app.use((req, res) => res.status(404).json({ error: `Not found: ${req.method} ${req.path}` }));
 app.use(errorHandler);
 
-// ─── Socket.io ────────────────────────────────────────────────────────────────
 setupSocketHandlers(io);
 
-// ─── Start ────────────────────────────────────────────────────────────────────
 const PORT = parseInt(process.env.PORT || '4000', 10);
 httpServer.listen(PORT, '0.0.0.0', () => {
-  logger.info(
-    `🚀 Nexora server on port ${PORT} [${process.env.NODE_ENV || 'development'}]`
-  );
+  logger.info(`🚀 Nexora server on port ${PORT} [${process.env.NODE_ENV || 'development'}]`);
 });
 
 export default app;

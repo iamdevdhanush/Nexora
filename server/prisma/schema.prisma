@@ -7,7 +7,6 @@ datasource db {
   url      = env("DATABASE_URL")
 }
 
-// ─── User & Auth ──────────────────────────────────────────────────────────────
 model User {
   id        String   @id @default(cuid())
   name      String
@@ -38,7 +37,6 @@ model OtpCode {
   userId String?
 }
 
-// ─── Invite Links ─────────────────────────────────────────────────────────────
 model InviteLink {
   id          String    @id @default(cuid())
   token       String    @unique @default(cuid())
@@ -53,7 +51,6 @@ model InviteLink {
   createdAt   DateTime  @default(now())
 }
 
-// ─── Hackathon ────────────────────────────────────────────────────────────────
 model Hackathon {
   id          String          @id @default(cuid())
   name        String
@@ -95,7 +92,6 @@ model CoordinatorAssignment {
   @@unique([hackathonId, userId])
 }
 
-// ─── Problem Statements ───────────────────────────────────────────────────────
 model ProblemStatement {
   id          String    @id @default(cuid())
   title       String
@@ -106,7 +102,6 @@ model ProblemStatement {
   createdAt   DateTime  @default(now())
 }
 
-// ─── Team ─────────────────────────────────────────────────────────────────────
 model Team {
   id             String     @id @default(cuid())
   name           String
@@ -150,7 +145,6 @@ model Participant {
   teamId String
 }
 
-// ─── Scoring / Jury ───────────────────────────────────────────────────────────
 model ScoringCriteria {
   id          String  @id @default(cuid())
   name        String
@@ -173,7 +167,6 @@ model Score {
   @@unique([teamId, criteriaId, judgeId])
 }
 
-// ─── Messaging ────────────────────────────────────────────────────────────────
 model Message {
   id            String        @id @default(cuid())
   content       String
@@ -204,7 +197,6 @@ model MessageRecipient {
   teamId String
 }
 
-// ─── Certificates ─────────────────────────────────────────────────────────────
 model Certificate {
   id              String     @id @default(cuid())
   participantName String
@@ -224,7 +216,6 @@ model Certificate {
   teamId String
 }
 
-// ─── Activity ─────────────────────────────────────────────────────────────────
 model ActivityLog {
   id        String   @id @default(cuid())
   action    String
@@ -240,7 +231,6 @@ model ActivityLog {
   actorId String
 }
 
-// ─── Enums ────────────────────────────────────────────────────────────────────
 enum Role {
   SUPER_ADMIN
   COORDINATOR

@@ -7,11 +7,6 @@ const TEAMS = [
   { name: 'ByteBenders', status: 'CHECKED_IN' as TeamStatus, room: 'B-201', phone: '+919876540003', project: 'Mesh Networking SDK', members: ['Kiran Kumar', 'Sneha Rao', 'Amit Joshi', 'Divya Nair'] },
   { name: 'CodeCraft', status: 'REGISTERED' as TeamStatus, room: undefined, phone: '+919876540004', project: undefined, members: ['Rahul Verma', 'Pooja Mishra'] },
   { name: 'DataDen', status: 'ACTIVE' as TeamStatus, room: 'C-301', phone: '+919876540005', project: 'Fraud Detector', members: ['Sanjay Gupta', 'Meera Krishnan', 'Nikhil Jain'] },
-  { name: 'EtherEdge', status: 'CHECKED_IN' as TeamStatus, room: 'A-103', phone: '+919876540006', project: 'DeFi Yield Optimizer', members: ['Tanvi Bhat', 'Suresh Pillai'] },
-  { name: 'FusionLabs', status: 'SUBMITTED' as TeamStatus, room: 'B-202', phone: '+919876540007', project: 'AR Navigation for Blind', members: ['Kavita Reddy', 'Yash Shah', 'Deepak Tiwari'] },
-  { name: 'GridMind', status: 'ACTIVE' as TeamStatus, room: 'C-302', phone: '+919876540008', project: 'Smart Grid Optimizer', members: ['Arun Menon', 'Shweta Singh'] },
-  { name: 'HexCore', status: 'REGISTERED' as TeamStatus, room: undefined, phone: '+919876540009', project: undefined, members: ['Nitesh Sharma', 'Rakhi Gupta'] },
-  { name: 'InfinityIO', status: 'CHECKED_IN' as TeamStatus, room: 'D-401', phone: '+919876540010', project: 'Serverless Orchestration', members: ['Manish Joshi', 'Sunita Rao', 'Vijay Patel'] },
 ];
 
 async function main() {
@@ -69,12 +64,8 @@ async function main() {
         leaderPhone: t.phone,
         projectName: t.project,
         coordinatorId: t.status === 'REGISTERED' ? undefined : assignment.id,
-        checkInTime: ['CHECKED_IN', 'ACTIVE', 'SUBMITTED'].includes(t.status)
-          ? new Date(Date.now() - Math.random() * 3600000 * 6)
-          : undefined,
-        submissionTime: t.status === 'SUBMITTED'
-          ? new Date(Date.now() - Math.random() * 3600000)
-          : undefined,
+        checkInTime: ['CHECKED_IN', 'ACTIVE', 'SUBMITTED'].includes(t.status) ? new Date(Date.now() - Math.random() * 3600000 * 6) : undefined,
+        submissionTime: t.status === 'SUBMITTED' ? new Date(Date.now() - Math.random() * 3600000) : undefined,
         participants: {
           create: t.members.map((name, idx) => ({
             name,
@@ -88,23 +79,12 @@ async function main() {
     console.log(`  ✓ ${t.name} [${t.status}]`);
   }
 
-  // Seed invite link
   await prisma.inviteLink.create({
-    data: {
-      hackathonId: hackathon.id,
-      createdById: admin.id,
-      expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
-    },
+    data: { hackathonId: hackathon.id, createdById: admin.id, expiresAt: new Date(Date.now() + 7 * 24 * 3600000) },
   });
 
-  // Seed dev OTP for admin
   await prisma.otpCode.create({
-    data: {
-      code: '123456',
-      contact: 'admin@nexora.dev',
-      expiresAt: new Date(Date.now() + 365 * 24 * 3600000),
-      userId: admin.id,
-    },
+    data: { code: '123456', contact: 'admin@nexora.dev', expiresAt: new Date(Date.now() + 365 * 24 * 3600000), userId: admin.id },
   });
 
   console.log('\n✅ Seed complete!');
