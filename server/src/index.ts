@@ -32,6 +32,7 @@ export const io = new SocketServer(httpServer, {
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: true,
 credentials: true }));
+app.use(express.json());
 app.use('/api', apiLimiter);
 
 app.use('/api/auth', authRouter);
