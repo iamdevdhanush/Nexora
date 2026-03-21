@@ -19,6 +19,7 @@ interface HackathonState {
   hackathons: Hackathon[];
   activeHackathon: Hackathon | null;
   loading: boolean;
+  error: string | null;
   fetchHackathons: () => Promise<void>;
   setActiveHackathon: (h: Hackathon) => void;
   createHackathon: (data: Partial<Hackathon>) => Promise<Hackathon>;
@@ -31,18 +32,23 @@ export const useHackathonStore = create<HackathonState>()(
       hackathons: [],
       activeHackathon: null,
       loading: false,
+      error: null,
 
       fetchHackathons: async () => {
-        set({ loading: true });
+        set({ loading: true, error: null });
         try {
           const hackathons = await api.get<Hackathon[]>('/hackathons');
           set({ hackathons, loading: false });
-          if (!get().activeHackathon && hackathons.length > 0) {
+          const current = get().activeHackathon;
+          if (!current && hackathons.length > 0) {
             const active = hackathons.find((h) => h.status === 'ACTIVE') || hackathons[0];
             set({ activeHackathon: active });
+          } else if (current) {
+            const refreshed = hackathons.find((h) => h.id === current.id);
+            if (refreshed) set({ activeHackathon: refreshed });
           }
-        } catch {
-          set({ loading: false });
+        } catch (err: any) {
+          set({ loading: false, error: err.message });
         }
       },
 

@@ -18,17 +18,17 @@ model User {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  otpCodes       OtpCode[]
-  hackathons     Hackathon[]            @relation("HackathonCreator")
-  assignments    CoordinatorAssignment[]
-  sentMessages   Message[]
-  activityLogs   ActivityLog[]
+  otpCodes     OtpCode[]
+  hackathons   Hackathon[]             @relation("HackathonCreator")
+  assignments  CoordinatorAssignment[]
+  sentMessages Message[]
+  activityLogs ActivityLog[]
 }
 
 model OtpCode {
   id        String   @id @default(cuid())
   code      String
-  contact   String   // email or phone
+  contact   String
   expiresAt DateTime
   used      Boolean  @default(false)
   createdAt DateTime @default(now())
@@ -54,9 +54,9 @@ model Hackathon {
   createdBy   User   @relation("HackathonCreator", fields: [createdById], references: [id])
   createdById String
 
-  teams       Team[]
-  assignments CoordinatorAssignment[]
-  messages    Message[]
+  teams        Team[]
+  assignments  CoordinatorAssignment[]
+  messages     Message[]
   certificates Certificate[]
   activityLogs ActivityLog[]
 }
@@ -98,9 +98,9 @@ model Team {
   coordinator   CoordinatorAssignment? @relation("CoordinatorTeams", fields: [coordinatorId], references: [id])
   coordinatorId String?
 
-  participants  Participant[]
+  participants      Participant[]
   messageRecipients MessageRecipient[]
-  certificates  Certificate[]
+  certificates      Certificate[]
 
   @@unique([hackathonId, name])
 }
@@ -149,15 +149,15 @@ model MessageRecipient {
 
 // ─── Certificates ─────────────────────────────────────────────────────────────
 model Certificate {
-  id              String      @id @default(cuid())
+  id              String     @id @default(cuid())
   participantName String
   email           String
-  type            CertType    @default(PARTICIPATION)
-  status          CertStatus  @default(PENDING)
+  type            CertType   @default(PARTICIPATION)
+  status          CertStatus @default(PENDING)
   pdfUrl          String?
   generatedAt     DateTime?
   sentAt          DateTime?
-  createdAt       DateTime    @default(now())
+  createdAt       DateTime   @default(now())
 
   hackathon   Hackathon @relation(fields: [hackathonId], references: [id])
   hackathonId String

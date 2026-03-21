@@ -19,10 +19,7 @@ export function SheetsSheet() {
     if (!activeHackathon || !sheetId.trim()) return;
     setLoading(true);
     try {
-      const r = await api.post<typeof result>(`/hackathons/${activeHackathon.id}/sheets/sync`, {
-        sheetId: sheetId.trim(),
-        range,
-      });
+      const r = await api.post<typeof result>(`/hackathons/${activeHackathon.id}/sheets/sync`, { sheetId: sheetId.trim(), range });
       setResult(r);
       await fetchTeams(activeHackathon.id);
       toast(`Synced: ${r!.created} created, ${r!.updated} updated`, 'success');
@@ -36,62 +33,26 @@ export function SheetsSheet() {
       <div className="sheet animate-slide-up">
         <div className="sheet-handle" />
         <div className="flex items-center justify-between px-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div>
-            <h2 className="font-bold" style={{ fontSize: 16 }}>Sync Google Sheets</h2>
-            <p className="text-caption mt-0.5">Import teams from registration form</p>
-          </div>
-          <button className="btn btn-ghost btn-icon btn-sm" onClick={close}>
-            <X className="w-4 h-4" />
-          </button>
+          <div><h2 className="font-bold" style={{ fontSize: 16 }}>Sync Google Sheets</h2><p className="text-caption mt-0.5">Import teams from registration form</p></div>
+          <button className="btn btn-ghost btn-icon btn-sm" onClick={close}><X className="w-4 h-4" /></button>
         </div>
-
         <div className="px-5 py-4 space-y-4" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
-          <div
-            className="px-4 py-3 rounded-lg"
-            style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}
-          >
+          <div className="px-4 py-3 rounded-lg" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
             <p className="font-semibold mb-1" style={{ fontSize: 13 }}>Find your Sheet ID in the URL:</p>
             <p className="font-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
               docs.google.com/spreadsheets/d/<span style={{ color: 'var(--accent)', fontWeight: 700 }}>SHEET_ID</span>/edit
             </p>
           </div>
-
-          <input
-            value={sheetId}
-            onChange={(e) => setSheetId(e.target.value)}
-            placeholder="Sheet ID"
-            className="input font-mono"
-          />
-          <input
-            value={range}
-            onChange={(e) => setRange(e.target.value)}
-            placeholder="Range"
-            className="input font-mono"
-          />
-
+          <input value={sheetId} onChange={(e) => setSheetId(e.target.value)} placeholder="Sheet ID" className="input font-mono" />
+          <input value={range} onChange={(e) => setRange(e.target.value)} placeholder="Range" className="input font-mono" />
           {result && (
-            <div
-              className="flex items-center gap-3 px-4 py-3 rounded-lg"
-              style={{ background: 'var(--success-bg)', border: '1px solid var(--border)' }}
-            >
+            <div className="flex items-center gap-3 px-4 py-3 rounded-lg" style={{ background: 'var(--success-bg)', border: '1px solid var(--border)' }}>
               <CheckCircle2 className="w-5 h-5 flex-shrink-0" style={{ color: 'var(--success)' }} />
-              <p className="font-semibold" style={{ fontSize: 14, color: 'var(--success)' }}>
-                {result.created} created · {result.updated} updated · {result.skipped} skipped
-              </p>
+              <p className="font-semibold" style={{ fontSize: 14, color: 'var(--success)' }}>{result.created} created · {result.updated} updated · {result.skipped} skipped</p>
             </div>
           )}
-
-          <button
-            onClick={sync}
-            disabled={loading || !sheetId.trim()}
-            className="btn btn-primary w-full"
-            style={{ height: 42 }}
-          >
-            {loading ? (
-              <div className="spinner-white" style={{ width: 16, height: 16 }} />
-            ) : (
-              <Table2 className="w-4 h-4" />
-            )}
+          <button onClick={sync} disabled={loading || !sheetId.trim()} className="btn btn-primary w-full" style={{ height: 42 }}>
+            {loading ? <div className="spinner-white" style={{ width: 16, height: 16 }} /> : <Table2 className="w-4 h-4" />}
             {loading ? 'Syncing…' : 'Sync now'}
           </button>
         </div>

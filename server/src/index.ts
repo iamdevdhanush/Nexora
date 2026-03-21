@@ -22,6 +22,9 @@ dotenv.config();
 const app = express();
 const httpServer = createServer(app);
 
+// ─── CRITICAL: Trust proxy for rate limiter behind Render/Vercel/ngrok ────────
+app.set('trust proxy', 1);
+
 export const io = new SocketServer(httpServer, {
   cors: {
     origin: process.env.CLIENT_URL || 'http://localhost:5173',
@@ -32,10 +35,12 @@ export const io = new SocketServer(httpServer, {
 
 // ─── Middleware ───────────────────────────────────────────────────────────────
 app.use(helmet({ contentSecurityPolicy: false }));
-app.use(cors({
-  origin: process.env.CLIENT_URL || 'http://localhost:5173',
-  credentials: true,
-}));
+app.use(
+  cors({
+    origin: process.env.CLIENT_URL || 'http://localhost:5173',
+    credentials: true,
+  })
+);
 app.use(express.json({ limit: '10mb' }));
 app.use('/api', apiLimiter);
 
@@ -50,7 +55,14 @@ app.use('/api/hackathons/:hackathonId/metrics', metricsRouter);
 app.use('/api/hackathons/:hackathonId/activity', activityRouter);
 app.use('/api/hackathons/:hackathonId/sheets', sheetsRouter);
 
-app.get('/health', (_, res) => res.json({ status: 'ok', ts: new Date().toISOString() }));
+app.get('/health', (_, res) =>
+  res.json({ status: 'ok', ts: new Date().toISOString() })
+);
+
+// 404 fallback
+app.use((req, res) => {
+  res.status(404).json({ error: `Not found: ${req.method} ${req.path}` });
+});
 
 app.use(errorHandler);
 
@@ -58,9 +70,11 @@ app.use(errorHandler);
 setupSocketHandlers(io);
 
 // ─── Start ────────────────────────────────────────────────────────────────────
-const PORT = process.env.PORT || 4000;
-httpServer.listen(PORT, () => {
-  logger.info(`🚀 Nexora server on port ${PORT}`);
+const PORT = parseInt(process.env.PORT || '4000', 10);
+httpServer.listen(PORT, '0.0.0.0', () => {
+  logger.info(
+    `🚀 Nexora server on port ${PORT} [${process.env.NODE_ENV || 'development'}]`
+  );
 });
 
 export default app;

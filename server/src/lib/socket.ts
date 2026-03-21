@@ -20,6 +20,11 @@ export const setupSocketHandlers = (io: Server) => {
   });
 };
 
-export const emitToHackathon = (io: Server, hackathonId: string, event: string, payload: unknown) => {
+export const emitToHackathon = (
+  io: Server,
+  hackathonId: string,
+  event: string,
+  payload: unknown
+) => {
   io.to(`hackathon:${hackathonId}`).emit(event, { hackathonId, payload });
 };

@@ -32,21 +32,18 @@ const TEAMS = [
 async function main() {
   console.log('🌱 Seeding Nexora…');
 
-  // Create super admin
   const admin = await prisma.user.upsert({
     where: { email: 'admin@nexora.dev' },
     update: {},
     create: { name: 'Nexora Admin', email: 'admin@nexora.dev', role: 'SUPER_ADMIN' },
   });
 
-  // Create coordinators
   const coords = await Promise.all([
     prisma.user.upsert({ where: { email: 'coord1@nexora.dev' }, update: {}, create: { name: 'Riya Sharma', email: 'coord1@nexora.dev', role: 'COORDINATOR' } }),
     prisma.user.upsert({ where: { email: 'coord2@nexora.dev' }, update: {}, create: { name: 'Aakash Patel', email: 'coord2@nexora.dev', role: 'COORDINATOR' } }),
     prisma.user.upsert({ where: { email: 'coord3@nexora.dev' }, update: {}, create: { name: 'Sonal Mehta', email: 'coord3@nexora.dev', role: 'COORDINATOR' } }),
   ]);
 
-  // Create hackathon
   const hackathon = await prisma.hackathon.upsert({
     where: { id: 'seed-hackathon-01' },
     update: {},
@@ -63,20 +60,19 @@ async function main() {
     },
   });
 
-  // Assign coordinators
   const assignments = await Promise.all(
-    coords.map((c) => prisma.coordinatorAssignment.upsert({
-      where: { hackathonId_userId: { hackathonId: hackathon.id, userId: c.id } },
-      update: {},
-      create: { hackathonId: hackathon.id, userId: c.id },
-    }))
+    coords.map((c) =>
+      prisma.coordinatorAssignment.upsert({
+        where: { hackathonId_userId: { hackathonId: hackathon.id, userId: c.id } },
+        update: {},
+        create: { hackathonId: hackathon.id, userId: c.id },
+      })
+    )
   );
 
-  // Create teams
   for (let i = 0; i < TEAMS.length; i++) {
     const t = TEAMS[i];
     const assignment = assignments[i % assignments.length];
-
     await prisma.team.upsert({
       where: { hackathonId_name: { hackathonId: hackathon.id, name: t.name } },
       update: {},
@@ -87,11 +83,13 @@ async function main() {
         room: t.room,
         leaderPhone: t.phone,
         projectName: t.project,
-        coordinatorId: ['REGISTERED'].includes(t.status) ? undefined : assignment.id,
+        coordinatorId: t.status === 'REGISTERED' ? undefined : assignment.id,
         checkInTime: ['CHECKED_IN', 'ACTIVE', 'SUBMITTED'].includes(t.status)
-          ? new Date(Date.now() - Math.random() * 3600000 * 6) : undefined,
+          ? new Date(Date.now() - Math.random() * 3600000 * 6)
+          : undefined,
         submissionTime: t.status === 'SUBMITTED'
-          ? new Date(Date.now() - Math.random() * 3600000) : undefined,
+          ? new Date(Date.now() - Math.random() * 3600000)
+          : undefined,
         participants: {
           create: t.members.map((name, idx) => ({
             name,
@@ -105,7 +103,7 @@ async function main() {
     console.log(`  ✓ ${t.name} [${t.status}]`);
   }
 
-  // Seed OTP for admin (so you can log in without email)
+  // Seed dev OTP for admin
   await prisma.otpCode.create({
     data: {
       code: '000000',
@@ -116,7 +114,7 @@ async function main() {
   });
 
   console.log('\n✅ Seed complete!');
-  console.log('   Login: admin@nexora.dev  OTP: 000000  (dev mode shows OTP anyway)');
+  console.log('   Login: admin@nexora.dev  →  OTP: 123456 (shown in dev console)');
 }
 
 main().catch(console.error).finally(() => prisma.$disconnect());

@@ -12,142 +12,218 @@ teamsRouter.use(authenticate);
 
 const teamInclude = {
   participants: true,
-  coordinator: {
-    include: { user: { select: { id: true, name: true } } },
-  },
+  coordinator: { include: { user: { select: { id: true, name: true } } } },
 };
 
 const mapTeam = (t: any) => ({
   ...t,
-  coordinator: t.coordinator ? { id: t.coordinator.userId, name: t.coordinator.user.name } : null,
+  coordinator: t.coordinator
+    ? { id: t.coordinator.userId, name: t.coordinator.user?.name ?? 'Unknown' }
+    : null,
 });
 
-// GET search (lightweight for command palette)
+const VALID_STATUSES: TeamStatus[] = [
+  'REGISTERED', 'CHECKED_IN', 'ACTIVE', 'SUBMITTED', 'DISQUALIFIED',
+];
+
+// GET search
 teamsRouter.get('/search', async (req: AuthRequest, res) => {
   const { q } = req.query;
-  if (!q) return res.json([]);
-  const teams = await prisma.team.findMany({
-    where: {
-      hackathonId: req.hackathonId,
-      OR: [
-        { name: { contains: q as string, mode: 'insensitive' } },
-        { participants: { some: { name: { contains: q as string, mode: 'insensitive' } } } },
-      ],
-    },
-    include: teamInclude,
-    take: 8,
-  });
-  res.json(teams.map(mapTeam));
+  if (!q || typeof q !== 'string') return res.json([]);
+  try {
+    const teams = await prisma.team.findMany({
+      where: {
+        hackathonId: req.params.hackathonId,
+        OR: [
+          { name: { contains: q, mode: 'insensitive' } },
+          { participants: { some: { name: { contains: q, mode: 'insensitive' } } } },
+        ],
+      },
+      include: teamInclude,
+      take: 8,
+    });
+    res.json(teams.map(mapTeam));
+  } catch { res.json([]); }
 });
 
 // GET all teams
 teamsRouter.get('/', async (req: AuthRequest, res) => {
-  const { status, search, coordinatorId } = req.query;
-  const isCoordinator = req.user?.role === 'COORDINATOR';
+  try {
+    const { status, search, coordinatorId } = req.query;
+    const isCoordinator = req.user?.role === 'COORDINATOR';
+    let coordFilter: Record<string, any> = {};
 
-  let coordinatorFilter = {};
-  if (isCoordinator) {
-    const assignment = await prisma.coordinatorAssignment.findFirst({
-      where: { hackathonId: req.hackathonId, userId: req.user!.id },
+    if (isCoordinator) {
+      const a = await prisma.coordinatorAssignment.findFirst({
+        where: { hackathonId: req.params.hackathonId, userId: req.user!.id },
+      });
+      coordFilter = a ? { coordinatorId: a.id } : { id: '__NONE__' };
+    }
+    if (coordinatorId && typeof coordinatorId === 'string') {
+      coordFilter = { coordinatorId };
+    }
+
+    const teams = await prisma.team.findMany({
+      where: {
+        hackathonId: req.params.hackathonId,
+        ...(status && VALID_STATUSES.includes(status as TeamStatus)
+          ? { status: status as TeamStatus }
+          : {}),
+        ...(search && typeof search === 'string'
+          ? {
+              OR: [
+                { name: { contains: search, mode: 'insensitive' } },
+                { room: { contains: search, mode: 'insensitive' } },
+                { participants: { some: { name: { contains: search, mode: 'insensitive' } } } },
+              ],
+            }
+          : {}),
+        ...coordFilter,
+      },
+      include: teamInclude,
+      orderBy: { updatedAt: 'desc' },
     });
-    if (assignment) coordinatorFilter = { coordinatorId: assignment.id };
+    res.json(teams.map(mapTeam));
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to fetch teams', details: err.message });
   }
-  if (coordinatorId) coordinatorFilter = { coordinatorId: coordinatorId as string };
-
-  const teams = await prisma.team.findMany({
-    where: {
-      hackathonId: req.hackathonId,
-      ...(status ? { status: status as TeamStatus } : {}),
-      ...(search ? { name: { contains: search as string, mode: 'insensitive' } } : {}),
-      ...coordinatorFilter,
-    },
-    include: teamInclude,
-    orderBy: { updatedAt: 'desc' },
-  });
-  res.json(teams.map(mapTeam));
 });
 
 // GET single team
 teamsRouter.get('/:id', async (req: AuthRequest, res) => {
-  const team = await prisma.team.findFirst({
-    where: { id: req.params.id, hackathonId: req.hackathonId },
-    include: teamInclude,
-  });
-  if (!team) return res.status(404).json({ error: 'Team not found' });
-  res.json(mapTeam(team));
+  try {
+    const team = await prisma.team.findFirst({
+      where: { id: req.params.id, hackathonId: req.params.hackathonId },
+      include: teamInclude,
+    });
+    if (!team) return res.status(404).json({ error: 'Team not found' });
+    res.json(mapTeam(team));
+  } catch { res.status(500).json({ error: 'Failed to fetch team' }); }
 });
 
 // PATCH update team
 teamsRouter.patch('/:id', async (req: AuthRequest, res) => {
-  const { status, room, tableNumber, notes, coordinatorId, projectName, projectUrl } = req.body;
-  const team = await prisma.team.update({
-    where: { id: req.params.id },
-    data: {
-      ...(status && { status }),
-      ...(room !== undefined && { room }),
-      ...(tableNumber !== undefined && { tableNumber }),
-      ...(notes !== undefined && { notes }),
-      ...(coordinatorId !== undefined && { coordinatorId }),
-      ...(projectName !== undefined && { projectName }),
-      ...(projectUrl !== undefined && { projectUrl }),
-    },
-    include: teamInclude,
-  });
+  const {
+    status, room, tableNumber, notes, coordinatorId,
+    projectName, projectUrl, leaderPhone,
+  } = req.body;
+  try {
+    const team = await prisma.team.update({
+      where: { id: req.params.id },
+      data: {
+        ...(status && VALID_STATUSES.includes(status) && { status }),
+        ...(room !== undefined && { room: room || null }),
+        ...(tableNumber !== undefined && { tableNumber: tableNumber || null }),
+        ...(notes !== undefined && { notes: notes || null }),
+        ...(coordinatorId !== undefined && { coordinatorId: coordinatorId || null }),
+        ...(projectName !== undefined && { projectName: projectName || null }),
+        ...(projectUrl !== undefined && { projectUrl: projectUrl || null }),
+        ...(leaderPhone !== undefined && { leaderPhone: leaderPhone || null }),
+      },
+      include: teamInclude,
+    });
 
-  await prisma.activityLog.create({
-    data: {
-      action: `Team "${team.name}" updated`,
-      hackathonId: req.hackathonId!,
-      actorId: req.user!.id,
-      teamId: team.id,
-      teamName: team.name,
-      metadata: req.body,
-    },
-  });
+    prisma.activityLog.create({
+      data: {
+        action: `Team "${team.name}" updated`,
+        hackathonId: req.params.hackathonId,
+        actorId: req.user!.id,
+        teamId: team.id,
+        teamName: team.name,
+        metadata: req.body,
+      },
+    }).catch(() => {});
 
-  const mapped = mapTeam(team);
-  emitToHackathon(io, req.hackathonId!, 'team:updated', mapped);
-  const metrics = await getMetrics(req.hackathonId!);
-  emitToHackathon(io, req.hackathonId!, 'metrics:updated', metrics);
-
-  res.json(mapped);
+    const mapped = mapTeam(team);
+    emitToHackathon(io, req.params.hackathonId, 'team:updated', mapped);
+    getMetrics(req.params.hackathonId)
+      .then((m) => emitToHackathon(io, req.params.hackathonId, 'metrics:updated', m))
+      .catch(() => {});
+    res.json(mapped);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to update team', details: err.message });
+  }
 });
 
 // POST check-in
 teamsRouter.post('/:id/checkin', async (req: AuthRequest, res) => {
-  const team = await prisma.team.update({
-    where: { id: req.params.id },
-    data: { status: 'CHECKED_IN', checkInTime: new Date() },
-    include: teamInclude,
-  });
-
-  await prisma.activityLog.create({
-    data: {
-      action: `Team "${team.name}" checked in`,
-      hackathonId: req.hackathonId!,
-      actorId: req.user!.id,
-      teamId: team.id,
-      teamName: team.name,
-    },
-  });
-
-  const mapped = mapTeam(team);
-  emitToHackathon(io, req.hackathonId!, 'team:checkin', { team: mapped, timestamp: new Date() });
-  emitToHackathon(io, req.hackathonId!, 'team:updated', mapped);
-  const metrics = await getMetrics(req.hackathonId!);
-  emitToHackathon(io, req.hackathonId!, 'metrics:updated', metrics);
-
-  res.json(mapped);
+  try {
+    const team = await prisma.team.update({
+      where: { id: req.params.id },
+      data: { status: 'CHECKED_IN', checkInTime: new Date() },
+      include: teamInclude,
+    });
+    prisma.activityLog.create({
+      data: {
+        action: `Team "${team.name}" checked in`,
+        hackathonId: req.params.hackathonId,
+        actorId: req.user!.id,
+        teamId: team.id,
+        teamName: team.name,
+      },
+    }).catch(() => {});
+    const mapped = mapTeam(team);
+    emitToHackathon(io, req.params.hackathonId, 'team:checkin', { team: mapped, timestamp: new Date() });
+    emitToHackathon(io, req.params.hackathonId, 'team:updated', mapped);
+    getMetrics(req.params.hackathonId)
+      .then((m) => emitToHackathon(io, req.params.hackathonId, 'metrics:updated', m))
+      .catch(() => {});
+    res.json(mapped);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to check in', details: err.message });
+  }
 });
 
 // POST undo check-in
 teamsRouter.post('/:id/undo-checkin', async (req: AuthRequest, res) => {
-  const team = await prisma.team.update({
-    where: { id: req.params.id },
-    data: { status: 'REGISTERED', checkInTime: null },
-    include: teamInclude,
+  try {
+    const team = await prisma.team.update({
+      where: { id: req.params.id },
+      data: { status: 'REGISTERED', checkInTime: null },
+      include: teamInclude,
+    });
+    const mapped = mapTeam(team);
+    emitToHackathon(io, req.params.hackathonId, 'team:updated', mapped);
+    res.json(mapped);
+  } catch (err: any) {
+    res.status(500).json({ error: 'Failed to undo check-in', details: err.message });
+  }
+});
+
+// POST create team
+teamsRouter.post('/', async (req: AuthRequest, res) => {
+  const schema = z.object({
+    name: z.string().min(1),
+    leaderPhone: z.string().optional(),
+    room: z.string().optional(),
+    participants: z.array(z.object({
+      name: z.string(),
+      email: z.string().optional(),
+      phone: z.string().optional(),
+      isLeader: z.boolean().default(false),
+    })).optional(),
   });
-  const mapped = mapTeam(team);
-  emitToHackathon(io, req.hackathonId!, 'team:updated', mapped);
-  res.json(mapped);
+  const parsed = schema.safeParse(req.body);
+  if (!parsed.success)
+    return res.status(400).json({ error: 'Invalid input', details: parsed.error.errors });
+
+  try {
+    const team = await prisma.team.create({
+      data: {
+        name: parsed.data.name,
+        hackathonId: req.params.hackathonId,
+        leaderPhone: parsed.data.leaderPhone,
+        room: parsed.data.room,
+        participants: parsed.data.participants
+          ? { create: parsed.data.participants }
+          : undefined,
+      },
+      include: teamInclude,
+    });
+    res.status(201).json(mapTeam(team));
+  } catch (err: any) {
+    if (err.code === 'P2002')
+      return res.status(409).json({ error: 'Team name already exists in this hackathon' });
+    res.status(500).json({ error: 'Failed to create team' });
+  }
 });

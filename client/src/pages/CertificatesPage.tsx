@@ -4,18 +4,10 @@ import { useHackathonStore } from '@/store/hackathonStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
 
 interface Cert {
-  id: string;
-  participantName: string;
-  email: string;
-  type: string;
-  status: string;
-  teamId: string;
-  team: { name: string };
-  generatedAt?: string;
-  sentAt?: string;
+  id: string; participantName: string; email: string; type: string; status: string;
+  teamId: string; team: { name: string }; generatedAt?: string; sentAt?: string;
 }
 
 const STATUS_ICON: Record<string, React.ReactNode> = {
@@ -47,9 +39,7 @@ export function CertificatesPage() {
     if (!activeHackathon) return;
     setGenerating(true);
     try {
-      const r = await api.post<{ created: number }>(`/hackathons/${activeHackathon.id}/certificates/generate`, {
-        type: 'PARTICIPATION',
-      });
+      const r = await api.post<{ created: number }>(`/hackathons/${activeHackathon.id}/certificates/generate`, { type: 'PARTICIPATION' });
       toast(`${r.created} certificates queued`, 'success');
       load();
     } catch (e: any) { toast(e.message, 'error'); }
@@ -68,17 +58,12 @@ export function CertificatesPage() {
         <h1 className="text-heading">Certificates</h1>
         {isAdmin && (
           <button className="btn btn-primary btn-sm" onClick={generate} disabled={generating}>
-            {generating ? (
-              <div className="spinner-white" style={{ width: 14, height: 14 }} />
-            ) : (
-              <Award className="w-3.5 h-3.5" />
-            )}
+            {generating ? <div className="spinner-white" style={{ width: 14, height: 14 }} /> : <Award className="w-3.5 h-3.5" />}
             Generate
           </button>
         )}
       </div>
 
-      {/* Stats */}
       {stats.total > 0 && (
         <div className="grid grid-cols-3 gap-3 mb-5">
           {[
@@ -87,9 +72,7 @@ export function CertificatesPage() {
             { label: 'Pending', value: stats.pending, color: 'var(--warning)' },
           ].map((s) => (
             <div key={s.label} className="metric-card text-center">
-              <p className="font-bold" style={{ fontSize: 24, color: s.color || 'var(--text)' }}>
-                {s.value}
-              </p>
+              <p className="font-bold" style={{ fontSize: 24, color: (s as any).color || 'var(--text)' }}>{s.value}</p>
               <p className="text-caption mt-1">{s.label}</p>
             </div>
           ))}
@@ -110,9 +93,7 @@ export function CertificatesPage() {
         </div>
       ) : certs.length === 0 ? (
         <div className="empty-state">
-          <div className="empty-icon">
-            <Award className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
-          </div>
+          <div className="empty-icon"><Award className="w-5 h-5" style={{ color: 'var(--text-muted)' }} /></div>
           <p className="font-medium" style={{ fontSize: 14 }}>No certificates yet</p>
           <p className="text-caption mt-1">Generate participation certificates for all teams</p>
           {isAdmin && (
@@ -124,26 +105,13 @@ export function CertificatesPage() {
       ) : (
         <div className="card overflow-hidden">
           {certs.slice(0, 100).map((c) => (
-            <div
-              key={c.id}
-              className="flex items-center gap-3 px-4 py-3.5 border-b last:border-0"
-              style={{ borderColor: 'var(--border)' }}
-            >
+            <div key={c.id} className="flex items-center gap-3 px-4 py-3.5 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
               {STATUS_ICON[c.status] || STATUS_ICON.PENDING}
               <div className="flex-1 min-w-0">
-                <p className="font-medium truncate" style={{ fontSize: 14 }}>
-                  {c.participantName}
-                </p>
-                <p className="text-caption truncate">
-                  {c.team?.name} · {c.email}
-                </p>
+                <p className="font-medium truncate" style={{ fontSize: 14 }}>{c.participantName}</p>
+                <p className="text-caption truncate">{c.team?.name} · {c.email}</p>
               </div>
-              <span
-                className="badge flex-shrink-0"
-                style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}
-              >
-                {c.type}
-              </span>
+              <span className="badge flex-shrink-0" style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>{c.type}</span>
             </div>
           ))}
         </div>
