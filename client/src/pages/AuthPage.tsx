@@ -1,4 +1,4 @@
-import { useState } from 'react';
+'import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Zap, ChevronLeft, User } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -21,7 +21,7 @@ export function AuthPage() {
     if (!contact.trim()) return;
     setLoading(true); setError('');
     try {
-      const res = await api.post<{ message: string; devOtp?: string }>('/api/auth/otp/request', { contact: contact.trim() });
+      const res = await api.post<{ message: string; devOtp?: string }>('/api/api/auth/otp/verify', { contact: contact.trim() });
       if (res.devOtp) setDevOtp(res.devOtp);
       setStep('otp');
     } catch (e: any) { setError(e.message); }
@@ -32,7 +32,7 @@ export function AuthPage() {
     if (otp.length !== 6) return;
     setLoading(true); setError('');
     try {
-      const res = await api.post<{ token: string; user: any }>('/api/auth/otp/verify', { contact: contact.trim(), code: otp });
+      const res = await api.post<{ token: string; user: any }>('/api/api/auth/otp/verify', { contact: contact.trim(), code: otp });
       const generatedName = contact.includes('@') ? contact.split('@')[0] : 'User';
       if (res.user.name === generatedName || res.user.name === 'User') {
         setAuth(res.user, res.token);
