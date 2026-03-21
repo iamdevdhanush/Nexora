@@ -1,3 +1,4 @@
+import { sendOtpEmail } from '../lib/mail';
 import { Router } from 'express';
 import jwt from 'jsonwebtoken';
 import { z } from 'zod';
@@ -36,6 +37,9 @@ authRouter.post('/otp/request', authLimiter, async (req, res) => {
     });
 
     const code = IS_DEV ? '123456' : generateOtp();
+    if (!IS_DEV && contact.includes('@')) {
+  await sendOtpEmail(contact, code);
+}
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     const isEmail = contact.includes('@');
