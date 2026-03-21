@@ -9,7 +9,7 @@ coordinatorsRouter.use(authenticate);
 coordinatorsRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const assignments = await prisma.coordinatorAssignment.findMany({
-      where: { hackathonId: req.params.hackathonId },
+      where: { hackathonId: req.params.hackathonId! },
       include: {
         user: { select: { id: true, name: true, email: true, phone: true, role: true } },
         _count: { select: { teams: true } },
@@ -55,10 +55,10 @@ coordinatorsRouter.post('/', requireAdmin, async (req: AuthRequest, res) => {
 
     const assignment = await prisma.coordinatorAssignment.upsert({
       where: {
-        hackathonId_userId: { hackathonId: req.params.hackathonId, userId: user.id },
+        hackathonId_userId: { hackathonId: req.params.hackathonId!, userId: user.id },
       },
       update: {},
-      create: { hackathonId: req.params.hackathonId, userId: user.id },
+      create: { hackathonId: req.params.hackathonId!, userId: user.id },
     });
 
     res.json({ assignmentId: assignment.id, ...user, assignedTeamCount: 0 });

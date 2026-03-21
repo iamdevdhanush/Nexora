@@ -1,3 +1,4 @@
+import type { TeamStatus } from '@/store/teamsStore';
 import { useState, useEffect, useRef } from 'react';
 import { Search, UserCheck, CheckCircle2, XCircle, QrCode, ScanLine } from 'lucide-react';
 import { useTeamsStore, Team } from '@/store/teamsStore';
@@ -27,26 +28,61 @@ export function CheckInPage() {
     : [];
 
   const doCheckIn = async (team: Team) => {
-    if (!activeHackathon || processing) return;
-    if (team.status !== 'REGISTERED') {
-      setLog((l) => [{ team, success: false, msg: `Already ${team.status.replace('_', ' ')}`, time: new Date() }, ...l].slice(0, 20));
-      setQuery('');
-      return;
-    }
-    setProcessing(true);
-    try {
-      await checkIn(activeHackathon.id, team.id);
-      setLog((l) => [{ team: { ...team, status: 'CHECKED_IN' }, success: true, msg: 'Checked in', time: new Date() }, ...l].slice(0, 20));
-      toast(`✓ ${team.name}`, 'success');
-    } catch (e: any) {
-      setLog((l) => [{ team, success: false, msg: e.message, time: new Date() }, ...l].slice(0, 20));
-      toast(e.message, 'error');
-    } finally {
-      setProcessing(false);
-      setQuery('');
-      inputRef.current?.focus();
-    }
-  };
+  if (!activeHackathon || processing) return;
+
+  // ❌ Already checked-in case
+  if (team.status !== 'REGISTERED') {
+    setLog((l) =>
+      [
+        {
+          team,
+          success: false,
+          msg: `Already ${team.status.replace('_', ' ')}`,
+          time: new Date(),
+        },
+        ...l,
+      ].slice(0, 20)
+    );
+    setQuery('');
+    return;
+  }
+
+  try {
+    await checkIn(activeHackathon.id, team.id);
+
+    setLog((l) =>
+      [
+        {
+          team: { ...team, status: 'CHECKED_IN' as TeamStatus },
+          success: true,
+          msg: 'Checked in',
+          time: new Date(),
+        },
+        ...l,
+      ].slice(0, 20)
+    );
+
+    toast(`✓ ${team.name}`, 'success');
+  } catch (e: any) {
+    setLog((l) =>
+      [
+        {
+          team,
+          success: false,
+          msg: e.message,
+          time: new Date(),
+        },
+        ...l,
+      ].slice(0, 20)
+    );
+
+    toast(e.message, 'error');
+  } finally {
+    setProcessing(false);
+    setQuery('');
+    inputRef.current?.focus();
+  }
+};
 
   const checkedCount = teams.filter((t) => ['CHECKED_IN', 'ACTIVE', 'SUBMITTED'].includes(t.status)).length;
   const pct = teams.length ? Math.round((checkedCount / teams.length) * 100) : 0;

@@ -34,7 +34,7 @@ teamsRouter.get('/search', async (req: AuthRequest, res) => {
   try {
     const teams = await prisma.team.findMany({
       where: {
-        hackathonId: req.params.hackathonId,
+        hackathonId: req.params.hackathonId!,
         OR: [
           { name: { contains: q, mode: 'insensitive' } },
           { participants: { some: { name: { contains: q, mode: 'insensitive' } } } },
@@ -56,7 +56,7 @@ teamsRouter.get('/', async (req: AuthRequest, res) => {
 
     if (isCoordinator) {
       const a = await prisma.coordinatorAssignment.findFirst({
-        where: { hackathonId: req.params.hackathonId, userId: req.user!.id },
+        where: { hackathonId: req.params.hackathonId!, userId: req.user!.id },
       });
       coordFilter = a ? { coordinatorId: a.id } : { id: '__NONE__' };
     }
@@ -66,7 +66,7 @@ teamsRouter.get('/', async (req: AuthRequest, res) => {
 
     const teams = await prisma.team.findMany({
       where: {
-        hackathonId: req.params.hackathonId,
+        hackathonId: req.params.hackathonId!,
         ...(status && VALID_STATUSES.includes(status as TeamStatus)
           ? { status: status as TeamStatus }
           : {}),
@@ -94,7 +94,7 @@ teamsRouter.get('/', async (req: AuthRequest, res) => {
 teamsRouter.get('/:id', async (req: AuthRequest, res) => {
   try {
     const team = await prisma.team.findFirst({
-      where: { id: req.params.id, hackathonId: req.params.hackathonId },
+      where: { id: req.params.id, hackathonId: req.params.hackathonId! },
       include: teamInclude,
     });
     if (!team) return res.status(404).json({ error: 'Team not found' });
@@ -128,7 +128,7 @@ teamsRouter.patch('/:id', async (req: AuthRequest, res) => {
     prisma.activityLog.create({
       data: {
         action: `Team "${team.name}" updated`,
-        hackathonId: req.params.hackathonId,
+        hackathonId: req.params.hackathonId!,
         actorId: req.user!.id,
         teamId: team.id,
         teamName: team.name,
@@ -137,9 +137,9 @@ teamsRouter.patch('/:id', async (req: AuthRequest, res) => {
     }).catch(() => {});
 
     const mapped = mapTeam(team);
-    emitToHackathon(io, req.params.hackathonId, 'team:updated', mapped);
-    getMetrics(req.params.hackathonId)
-      .then((m) => emitToHackathon(io, req.params.hackathonId, 'metrics:updated', m))
+    emitToHackathon(io, req.params.hackathonId!, 'team:updated', mapped);
+    getMetrics(req.params.hackathonId!)
+      .then((m) => emitToHackathon(io, req.params.hackathonId!, 'metrics:updated', m))
       .catch(() => {});
     res.json(mapped);
   } catch (err: any) {
@@ -158,17 +158,17 @@ teamsRouter.post('/:id/checkin', async (req: AuthRequest, res) => {
     prisma.activityLog.create({
       data: {
         action: `Team "${team.name}" checked in`,
-        hackathonId: req.params.hackathonId,
+        hackathonId: req.params.hackathonId!,
         actorId: req.user!.id,
         teamId: team.id,
         teamName: team.name,
       },
     }).catch(() => {});
     const mapped = mapTeam(team);
-    emitToHackathon(io, req.params.hackathonId, 'team:checkin', { team: mapped, timestamp: new Date() });
-    emitToHackathon(io, req.params.hackathonId, 'team:updated', mapped);
-    getMetrics(req.params.hackathonId)
-      .then((m) => emitToHackathon(io, req.params.hackathonId, 'metrics:updated', m))
+    emitToHackathon(io, req.params.hackathonId!, 'team:checkin', { team: mapped, timestamp: new Date() });
+    emitToHackathon(io, req.params.hackathonId!, 'team:updated', mapped);
+    getMetrics(req.params.hackathonId!)
+      .then((m) => emitToHackathon(io, req.params.hackathonId!, 'metrics:updated', m))
       .catch(() => {});
     res.json(mapped);
   } catch (err: any) {
@@ -185,7 +185,7 @@ teamsRouter.post('/:id/undo-checkin', async (req: AuthRequest, res) => {
       include: teamInclude,
     });
     const mapped = mapTeam(team);
-    emitToHackathon(io, req.params.hackathonId, 'team:updated', mapped);
+    emitToHackathon(io, req.params.hackathonId!, 'team:updated', mapped);
     res.json(mapped);
   } catch (err: any) {
     res.status(500).json({ error: 'Failed to undo check-in', details: err.message });
@@ -213,7 +213,7 @@ teamsRouter.post('/', async (req: AuthRequest, res) => {
     const team = await prisma.team.create({
       data: {
         name: parsed.data.name,
-        hackathonId: req.params.hackathonId,
+        hackathonId: req.params.hackathonId!,
         leaderPhone: parsed.data.leaderPhone,
         room: parsed.data.room,
         participants: parsed.data.participants

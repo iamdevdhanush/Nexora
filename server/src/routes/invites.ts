@@ -133,7 +133,7 @@ inviteRouter.post('/:token/accept', authenticate, async (req: AuthRequest, res) 
 inviteRouter.get('/hackathon/:hackathonId', authenticate, requireAdmin, async (req: AuthRequest, res) => {
   try {
     const invites = await prisma.inviteLink.findMany({
-      where: { hackathonId: req.params.hackathonId },
+      where: { hackathonId: req.params.hackathonId! },
       include: { createdBy: { select: { name: true } } },
       orderBy: { createdAt: 'desc' },
     });

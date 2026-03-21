@@ -10,7 +10,7 @@ messagesRouter.use(authenticate);
 messagesRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const messages = await prisma.message.findMany({
-      where: { hackathonId: req.params.hackathonId },
+      where: { hackathonId: req.params.hackathonId! },
       include: {
         sentBy: { select: { id: true, name: true } },
         recipients: { include: { team: { select: { id: true, name: true } } } },
@@ -29,7 +29,7 @@ messagesRouter.post('/broadcast', requireAdmin, async (req: AuthRequest, res) =>
   if (!content || !channel)
     return res.status(400).json({ error: 'content and channel required' });
 
-  const hackathonId = req.params.hackathonId;
+  const hackathonId = req.params.hackathonId!;
 
   try {
     const teams = await prisma.team.findMany({
@@ -78,7 +78,7 @@ messagesRouter.post('/:id/retry', requireAdmin, async (req: AuthRequest, res) =>
       message.recipients.map((r) => r.team),
       message.content,
       message.channel,
-      req.params.hackathonId,
+      req.params.hackathonId!,
       io
     );
     res.json({ success: true });

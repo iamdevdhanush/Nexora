@@ -6,9 +6,9 @@ import { getMetrics } from '../services/metricsService';
 // ─── Metrics ──────────────────────────────────────────────────────────────────
 export const metricsRouter = Router({ mergeParams: true });
 metricsRouter.use(authenticate);
-metricsRouter.get('/', async (req, res) => {
+metricsRouter.get('/', async (req: AuthRequest, res) => {
   try {
-    res.json(await getMetrics(req.params.hackathonId));
+    res.json(await getMetrics(req.params.hackathonId!));
   } catch {
     res.status(500).json({ error: 'Failed to fetch metrics' });
   }
@@ -17,10 +17,10 @@ metricsRouter.get('/', async (req, res) => {
 // ─── Activity ─────────────────────────────────────────────────────────────────
 export const activityRouter = Router({ mergeParams: true });
 activityRouter.use(authenticate);
-activityRouter.get('/', async (req, res) => {
+activityRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const logs = await prisma.activityLog.findMany({
-      where: { hackathonId: req.params.hackathonId },
+      where: { hackathonId: req.params.hackathonId! },
       include: { actor: { select: { id: true, name: true } } },
       orderBy: { timestamp: 'desc' },
       take: 100,
@@ -39,7 +39,7 @@ sheetsRouter.post('/sync', requireAdmin, async (req: AuthRequest, res) => {
   const { sheetId, range = 'Sheet1!A:Z' } = req.body;
   if (!sheetId) return res.status(400).json({ error: 'sheetId required' });
 
-  const hackathonId = req.params.hackathonId;
+  const hackathonId = req.params.hackathonId!;
   let rows: string[][];
 
   try {
@@ -128,10 +128,10 @@ sheetsRouter.post('/sync', requireAdmin, async (req: AuthRequest, res) => {
 export const certificatesRouter = Router({ mergeParams: true });
 certificatesRouter.use(authenticate);
 
-certificatesRouter.get('/', async (req, res) => {
+certificatesRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const certs = await prisma.certificate.findMany({
-      where: { hackathonId: req.params.hackathonId },
+      where: { hackathonId: req.params.hackathonId! },
       include: { team: { select: { id: true, name: true } } },
       orderBy: { createdAt: 'desc' },
     });
@@ -143,7 +143,7 @@ certificatesRouter.get('/', async (req, res) => {
 
 certificatesRouter.post('/generate', requireAdmin, async (req: AuthRequest, res) => {
   const { teamIds, type = 'PARTICIPATION' } = req.body;
-  const hackathonId = req.params.hackathonId;
+  const hackathonId = req.params.hackathonId!;
 
   try {
     const teams = await prisma.team.findMany({
@@ -178,7 +178,7 @@ certificatesRouter.post('/generate', requireAdmin, async (req: AuthRequest, res)
   }
 });
 
-certificatesRouter.patch('/:id', requireAdmin, async (req, res) => {
+certificatesRouter.patch('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
     const cert = await prisma.certificate.update({
       where: { id: req.params.id },
@@ -194,10 +194,10 @@ certificatesRouter.patch('/:id', requireAdmin, async (req, res) => {
 export const problemsRouter = Router({ mergeParams: true });
 problemsRouter.use(authenticate);
 
-problemsRouter.get('/', async (req, res) => {
+problemsRouter.get('/', async (req: AuthRequest, res) => {
   try {
     const problems = await prisma.problemStatement.findMany({
-      where: { hackathonId: req.params.hackathonId },
+      where: { hackathonId: req.params.hackathonId! },
       include: { _count: { select: { teams: true } } },
       orderBy: { createdAt: 'asc' },
     });
@@ -213,7 +213,7 @@ problemsRouter.post('/', requireAdmin, async (req: AuthRequest, res) => {
     return res.status(400).json({ error: 'title and description required' });
   try {
     const problem = await prisma.problemStatement.create({
-      data: { title, description, hackathonId: req.params.hackathonId },
+      data: { title, description, hackathonId: req.params.hackathonId! },
     });
     res.status(201).json(problem);
   } catch {
@@ -221,7 +221,7 @@ problemsRouter.post('/', requireAdmin, async (req: AuthRequest, res) => {
   }
 });
 
-problemsRouter.patch('/:id', requireAdmin, async (req, res) => {
+problemsRouter.patch('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
     const problem = await prisma.problemStatement.update({
       where: { id: req.params.id },
@@ -233,7 +233,7 @@ problemsRouter.patch('/:id', requireAdmin, async (req, res) => {
   }
 });
 
-problemsRouter.delete('/:id', requireAdmin, async (req, res) => {
+problemsRouter.delete('/:id', requireAdmin, async (req: AuthRequest, res) => {
   try {
     await prisma.problemStatement.delete({ where: { id: req.params.id } });
     res.json({ success: true });

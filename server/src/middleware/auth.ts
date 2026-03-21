@@ -4,6 +4,7 @@ import jwt from 'jsonwebtoken';
 const JWT_SECRET =
   process.env.JWT_SECRET || 'nexora-secret-change-in-prod-min-32-chars!!';
 
+// ✅ KEEP THIS AT TOP LEVEL (not inside anything)
 export interface AuthRequest extends Request {
   user?: {
     id: string;
@@ -25,11 +26,17 @@ export const authenticate = (
     ? authHeader.slice(7)
     : authHeader;
 
-  if (!token) return res.status(401).json({ error: 'Unauthorized — no token' });
+  if (!token) {
+    return res.status(401).json({ error: 'Unauthorized — no token' });
+  }
 
   try {
     req.user = jwt.verify(token, JWT_SECRET) as AuthRequest['user'];
-    if (req.params?.hackathonId) req.hackathonId = req.params.hackathonId;
+
+    if (req.params?.hackathonId) {
+      req.hackathonId = req.params.hackathonId;
+    }
+
     next();
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
