@@ -19,12 +19,16 @@ const generateOtp = (): string =>
 authRouter.post('/otp/request', authLimiter, async (req, res) => {
   const schema = z.object({ contact: z.string().min(3) });
   const parsed = schema.safeParse(req.body);
-  if (!parsed.success)
+
+  if (!parsed.success) {
     return res.status(400).json({ error: 'Email or phone required' });
+  }
 
   const { contact } = parsed.data;
 
   try {
+    console.log("OTP REQUEST:", contact);
+
     // Invalidate previous OTPs
     await prisma.otpCode.updateMany({
       where: { contact, used: false },
@@ -35,12 +39,19 @@ authRouter.post('/otp/request', authLimiter, async (req, res) => {
     const expiresAt = new Date(Date.now() + 10 * 60 * 1000);
 
     const isEmail = contact.includes('@');
+
     const user = await prisma.user.findFirst({
       where: isEmail ? { email: contact } : { phone: contact },
     });
 
+    // ✅ SAFE CREATE (fix)
     await prisma.otpCode.create({
-      data: { code, contact, expiresAt, userId: user?.id },
+      data: {
+        code,
+        contact,
+        expiresAt,
+        ...(user?.id ? { userId: user.id } : {}), // 🔥 FIXED
+      },
     });
 
     logger.info(`[OTP] ${contact} → ${IS_DEV ? code : '******'}`);
@@ -49,9 +60,11 @@ authRouter.post('/otp/request', authLimiter, async (req, res) => {
       message: 'OTP sent',
       ...(IS_DEV && { devOtp: code }),
     });
-  } catch (err) {
+
+  } catch (err: any) {
+    console.error("OTP ERROR FULL:", err); // 🔥 IMPORTANT DEBUG
     logger.error(`[OTP request] ${err}`);
-    return res.status(500).json({ error: 'Failed to send OTP' });
+    return res.status(500).json({ error: err.message || 'Failed to send OTP' });
   }
 });
 
