@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Zap, ChevronLeft, User } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -21,7 +21,7 @@ export function AuthPage() {
     if (!contact.trim()) return;
     setLoading(true); setError('');
     try {
-      const res = await api.post<{ message: string; devOtp?: string }>('/api/auth/otp/request', { contact: contact.trim() });
+      const res = await api.post<{ message: string; devOtp?: string }>('/auth/otp/request', { contact: contact.trim() });
       if (res.devOtp) setDevOtp(res.devOtp);
       setStep('otp');
     } catch (e: any) { setError(e.message); }
@@ -32,7 +32,7 @@ export function AuthPage() {
     if (otp.length !== 6) return;
     setLoading(true); setError('');
     try {
-      const res = await api.post<{ token: string; user: any }>('/api/auth/otp/verify', { contact: contact.trim(), code: otp });
+      const res = await api.post<{ token: string; user: any }>('/auth/otp/verify', { contact: contact.trim(), code: otp });
       const generatedName = contact.includes('@') ? contact.split('@')[0] : 'User';
       if (res.user.name === generatedName || res.user.name === 'User') {
         setAuth(res.user, res.token);
@@ -68,14 +68,12 @@ export function AuthPage() {
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col relative overflow-hidden">
       <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 60% 0%, rgba(124,58,237,0.15) 0%, transparent 55%)' }} />
-
       <header className="relative z-10 flex items-center gap-2 px-6 py-5">
         <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center">
           <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
         </div>
         <span className="text-white/70 font-medium text-sm tracking-tight">Nexora</span>
       </header>
-
       <div className="relative z-10 flex-1 flex flex-col justify-end px-6 pb-12 max-w-sm mx-auto w-full">
         <div className="mb-8">
           <h1 className="text-white font-bold tracking-tight mb-2" style={{ fontSize: 30, lineHeight: 1.15 }}>
@@ -89,14 +87,12 @@ export function AuthPage() {
             {step === 'onboarding' && 'What should we call you?'}
           </p>
         </div>
-
         <div className="space-y-3">
           {error && (
             <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(220,38,38,0.1)', color: '#FCA5A5', border: '1px solid rgba(220,38,38,0.2)' }}>
               {error}
             </div>
           )}
-
           {step === 'contact' && (
             <>
               <input type="text" inputMode="email" autoFocus value={contact} onChange={(e) => setContact(e.target.value)}
@@ -113,7 +109,6 @@ export function AuthPage() {
               </button>
             </>
           )}
-
           {step === 'otp' && (
             <>
               {devOtp && (
@@ -148,7 +143,6 @@ export function AuthPage() {
               </button>
             </>
           )}
-
           {step === 'onboarding' && (
             <>
               <div className="flex items-center gap-3 px-4 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>

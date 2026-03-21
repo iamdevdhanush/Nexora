@@ -20,8 +20,7 @@ export function SheetsSheet() {
     setLoading(true);
     try {
       const r = await api.post<typeof result>(`/hackathons/${activeHackathon.id}/sheets/sync`, { sheetId: sheetId.trim(), range });
-      setResult(r);
-      await fetchTeams(activeHackathon.id);
+      setResult(r); await fetchTeams(activeHackathon.id);
       toast(`Synced: ${r!.created} created, ${r!.updated} updated`, 'success');
     } catch (e: any) { toast(e.message, 'error'); }
     finally { setLoading(false); }
@@ -39,9 +38,7 @@ export function SheetsSheet() {
         <div className="px-5 py-4 space-y-4" style={{ paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
           <div className="px-4 py-3 rounded-lg" style={{ background: 'var(--bg-subtle)', border: '1px solid var(--border)' }}>
             <p className="font-semibold mb-1" style={{ fontSize: 13 }}>Find your Sheet ID in the URL:</p>
-            <p className="font-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>
-              docs.google.com/spreadsheets/d/<span style={{ color: 'var(--accent)', fontWeight: 700 }}>SHEET_ID</span>/edit
-            </p>
+            <p className="font-mono" style={{ fontSize: 11, color: 'var(--text-muted)' }}>docs.google.com/spreadsheets/d/<span style={{ color: 'var(--accent)', fontWeight: 700 }}>SHEET_ID</span>/edit</p>
           </div>
           <input value={sheetId} onChange={(e) => setSheetId(e.target.value)} placeholder="Sheet ID" className="input font-mono" />
           <input value={range} onChange={(e) => setRange(e.target.value)} placeholder="Range" className="input font-mono" />

@@ -1,6 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useEffect } from 'react';
-import { LayoutDashboard, Users, UserCheck, MessageSquare, Award, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, MessageSquare, Award } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
 import { useUIStore } from '@/store/uiStore';
@@ -39,19 +39,13 @@ export function AppShell() {
     const onTeamCheckin = ({ payload }: any) => upsertTeam(payload.team);
     socket.on('team:updated', onTeamUpdated);
     socket.on('team:checkin', onTeamCheckin);
-    return () => {
-      leaveHackathon(activeHackathon.id);
-      socket.off('team:updated', onTeamUpdated);
-      socket.off('team:checkin', onTeamCheckin);
-    };
+    return () => { leaveHackathon(activeHackathon.id); socket.off('team:updated', onTeamUpdated); socket.off('team:checkin', onTeamCheckin); };
   }, [activeHackathon?.id]);
 
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') { e.preventDefault(); useUIStore.getState().setCommandOpen(true); }
-      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((document.activeElement as HTMLElement)?.tagName)) {
-        e.preventDefault(); useUIStore.getState().setCommandOpen(true);
-      }
+      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((document.activeElement as HTMLElement)?.tagName)) { e.preventDefault(); useUIStore.getState().setCommandOpen(true); }
     };
     window.addEventListener('keydown', handler);
     return () => window.removeEventListener('keydown', handler);
@@ -59,20 +53,14 @@ export function AppShell() {
 
   return (
     <div className="ambient-bg">
-      {/* Desktop */}
       <div className="hidden md:grid" style={{ gridTemplateColumns: '220px 1fr', minHeight: '100vh' }}>
         <Sidebar />
-        <main className="min-h-screen overflow-auto" style={{ borderLeft: '1px solid var(--border)' }}>
-          <Outlet />
-        </main>
+        <main className="min-h-screen overflow-auto" style={{ borderLeft: '1px solid var(--border)' }}><Outlet /></main>
       </div>
-
-      {/* Mobile */}
       <div className="md:hidden min-h-screen flex flex-col">
         <TopBar />
         <main className="flex-1 overflow-auto pb-nav"><Outlet /></main>
-        <nav className="fixed bottom-0 inset-x-0 z-30 flex items-center"
-          style={{ height: 'calc(52px + var(--safe-bottom))', paddingBottom: 'var(--safe-bottom)', background: 'rgba(255,255,255,0.92)', borderTop: '1px solid var(--border)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+        <nav className="fixed bottom-0 inset-x-0 z-30 flex items-center" style={{ height: 'calc(52px + var(--safe-bottom))', paddingBottom: 'var(--safe-bottom)', background: 'rgba(255,255,255,0.92)', borderTop: '1px solid var(--border)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
           {BOTTOM_NAV.map(({ to, label, icon: Icon, exact }) => (
             <NavLink key={to} to={to} end={exact} className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1">
               {({ isActive }) => (
@@ -87,7 +75,6 @@ export function AppShell() {
           ))}
         </nav>
       </div>
-
       {commandOpen && <CommandPalette />}
       {broadcastOpen && <BroadcastSheet />}
       {sheetsOpen && <SheetsSheet />}

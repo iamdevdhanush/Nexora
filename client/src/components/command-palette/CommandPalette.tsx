@@ -44,16 +44,8 @@ export function CommandPalette() {
       run: () => { setSelectedTeam(t); navigate('/teams'); close(); },
     }));
 
-  const checkinActions: Action[] = q
-    ? teams.filter((t) => t.status === 'REGISTERED' && t.name.toLowerCase().includes(q.toLowerCase())).slice(0, 3).map((t) => ({
-        id: `ci-${t.id}`, label: `Check in ${t.name}`,
-        icon: <UserCheck className="w-4 h-4" style={{ color: 'var(--success)' }} />, category: 'Quick',
-        run: async () => { if (activeHackathon) { await checkIn(activeHackathon.id, t.id); toast(`${t.name} checked in`, 'success'); } close(); },
-      }))
-    : [];
-
   const all = q
-    ? [...checkinActions, ...teamActions, ...staticActions.filter((a) => a.label.toLowerCase().includes(q.toLowerCase()))]
+    ? [...teamActions, ...staticActions.filter((a) => a.label.toLowerCase().includes(q.toLowerCase()))]
     : [...staticActions, ...teamActions];
 
   const handleKey = (e: React.KeyboardEvent) => {

@@ -51,17 +51,13 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
   const saveRoom = async () => {
     if (!activeHackathon) return;
     await updateTeam(activeHackathon.id, team.id, { room: roomVal });
-    setEditingRoom(false);
-    toast('Room updated', 'success');
+    setEditingRoom(false); toast('Room updated', 'success');
   };
 
   const handleDelete = async () => {
     if (!activeHackathon) return;
-    try {
-      await deleteTeam(activeHackathon.id, team.id);
-      toast('Team deleted', 'success');
-      onClose();
-    } catch (e: any) { toast(e.message, 'error'); }
+    try { await deleteTeam(activeHackathon.id, team.id); toast('Team deleted', 'success'); onClose(); }
+    catch (e: any) { toast(e.message, 'error'); }
   };
 
   const actions = STATUS_ACTIONS.filter((a) => a.from.includes(team.status));
@@ -72,9 +68,7 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
       <div className="sheet animate-slide-up flex flex-col" style={{ maxHeight: '92vh' }}>
         <div className="sheet-handle" />
         <div className="flex items-center gap-3 px-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0" style={{ fontSize: 13, background: '#0A0A0A' }}>
-            {initials(team.name)}
-          </div>
+          <div className="w-9 h-9 rounded-lg flex items-center justify-center text-white font-bold flex-shrink-0" style={{ fontSize: 13, background: '#0A0A0A' }}>{initials(team.name)}</div>
           <div className="flex-1 min-w-0">
             <h2 className="font-bold truncate" style={{ fontSize: 16 }}>{team.name}</h2>
             <div className="flex items-center gap-2 mt-0.5">
@@ -84,7 +78,6 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
           </div>
           <button className="btn btn-ghost btn-icon btn-sm" onClick={onClose}><X className="w-4 h-4" /></button>
         </div>
-
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {isAdmin && actions.length > 0 && (
             <div className="flex gap-2 flex-wrap">
@@ -97,57 +90,37 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
               ))}
             </div>
           )}
-
           <div>
             <p className="text-label mb-2">Members ({team.participants.length})</p>
             <div className="card overflow-hidden">
               {team.participants.map((p) => (
                 <div key={p.id} className="flex items-center gap-3 px-4 py-3 border-b last:border-0" style={{ borderColor: 'var(--border)' }}>
-                  <div className="w-7 h-7 rounded-md flex items-center justify-center text-white font-bold flex-shrink-0"
-                    style={{ fontSize: 10, background: p.isLeader ? '#0A0A0A' : 'var(--bg-muted)', color: p.isLeader ? 'white' : 'var(--text-secondary)' }}>
-                    {initials(p.name)}
-                  </div>
+                  <div className="w-7 h-7 rounded-md flex items-center justify-center text-white font-bold flex-shrink-0" style={{ fontSize: 10, background: p.isLeader ? '#0A0A0A' : 'var(--bg-muted)', color: p.isLeader ? 'white' : 'var(--text-secondary)' }}>{initials(p.name)}</div>
                   <div className="flex-1 min-w-0">
-                    <p className="font-medium truncate" style={{ fontSize: 14 }}>
-                      {p.name}
-                      {p.isLeader && <span className="ml-2 px-1.5 py-0.5 rounded text-white font-semibold uppercase" style={{ fontSize: 9, letterSpacing: '0.05em', background: '#0A0A0A' }}>Leader</span>}
-                    </p>
+                    <p className="font-medium truncate" style={{ fontSize: 14 }}>{p.name}{p.isLeader && <span className="ml-2 px-1.5 py-0.5 rounded text-white font-semibold uppercase" style={{ fontSize: 9, letterSpacing: '0.05em', background: '#0A0A0A' }}>Leader</span>}</p>
                     {p.email && <p className="text-caption truncate">{p.email}</p>}
                   </div>
                   {p.phone && <a href={`tel:${p.phone}`} className="btn btn-ghost btn-icon btn-sm"><Phone className="w-3.5 h-3.5" /></a>}
                 </div>
               ))}
-              {team.participants.length === 0 && (
-                <p className="text-caption px-4 py-3">No members added</p>
-              )}
+              {team.participants.length === 0 && <p className="text-caption px-4 py-3">No members added</p>}
             </div>
           </div>
-
           <div>
             <p className="text-label mb-2">Room / Table</p>
             {editingRoom ? (
               <div className="flex gap-2">
-                <input autoFocus value={roomVal} onChange={(e) => setRoomVal(e.target.value)}
-                  onKeyDown={(e) => { if (e.key === 'Enter') saveRoom(); if (e.key === 'Escape') setEditingRoom(false); }}
-                  className="input flex-1 font-mono" placeholder="e.g. A-101" />
+                <input autoFocus value={roomVal} onChange={(e) => setRoomVal(e.target.value)} onKeyDown={(e) => { if (e.key === 'Enter') saveRoom(); if (e.key === 'Escape') setEditingRoom(false); }} className="input flex-1 font-mono" placeholder="e.g. A-101" />
                 <button className="btn btn-primary btn-icon" onClick={saveRoom}><Check className="w-4 h-4" /></button>
                 <button className="btn btn-secondary btn-icon" onClick={() => setEditingRoom(false)}><X className="w-4 h-4" /></button>
               </div>
             ) : (
-              <button onClick={() => isAdmin && setEditingRoom(true)}
-                className="card w-full flex items-center justify-between px-4 py-3 transition-colors duration-100"
-                style={{ cursor: isAdmin ? 'pointer' : 'default' }}
-                onMouseEnter={(e) => isAdmin && (e.currentTarget.style.background = 'var(--bg-subtle)')}
-                onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--bg)')}>
-                <div className="flex items-center gap-2">
-                  <MapPin className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-                  <span className="font-mono" style={{ fontSize: 14 }}>{team.room || 'Not assigned'}</span>
-                </div>
+              <button onClick={() => isAdmin && setEditingRoom(true)} className="card w-full flex items-center justify-between px-4 py-3 transition-colors duration-100" style={{ cursor: isAdmin ? 'pointer' : 'default' }}>
+                <div className="flex items-center gap-2"><MapPin className="w-4 h-4" style={{ color: 'var(--text-muted)' }} /><span className="font-mono" style={{ fontSize: 14 }}>{team.room || 'Not assigned'}</span></div>
                 {isAdmin && <Edit2 className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />}
               </button>
             )}
           </div>
-
           {isAdmin && (
             <div>
               <p className="text-label mb-2">Assigned coordinator</p>
@@ -157,67 +130,32 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
               </select>
             </div>
           )}
-
           {team.checkInTime && (
             <div>
               <p className="text-label mb-2">Timeline</p>
               <div className="card px-4 py-3 space-y-2">
-                <div className="flex justify-between items-center">
-                  <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Checked in</span>
-                  <span className="font-mono text-caption">{formatDateTime(team.checkInTime)}</span>
-                </div>
-                {team.submissionTime && (
-                  <div className="flex justify-between items-center">
-                    <span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Submitted</span>
-                    <span className="font-mono text-caption">{formatDateTime(team.submissionTime)}</span>
-                  </div>
-                )}
+                <div className="flex justify-between items-center"><span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Checked in</span><span className="font-mono text-caption">{formatDateTime(team.checkInTime)}</span></div>
+                {team.submissionTime && <div className="flex justify-between items-center"><span style={{ fontSize: 14, color: 'var(--text-secondary)' }}>Submitted</span><span className="font-mono text-caption">{formatDateTime(team.submissionTime)}</span></div>}
               </div>
             </div>
           )}
-
-          {team.projectName && (
-            <div>
-              <p className="text-label mb-2">Project</p>
-              <div className="card px-4 py-3">
-                <p className="font-semibold" style={{ fontSize: 14 }}>{team.projectName}</p>
-                {team.projectUrl && (
-                  <a href={team.projectUrl} target="_blank" rel="noopener" className="flex items-center gap-1 text-caption mt-1" style={{ color: 'var(--accent)' }}>
-                    {team.projectUrl}<ExternalLink className="w-3 h-3" />
-                  </a>
-                )}
-              </div>
-            </div>
-          )}
-
           {isAdmin && (
             <div className="pt-2">
               {!confirmDelete ? (
-                <button onClick={() => setConfirmDelete(true)} className="btn btn-danger w-full">
-                  <Trash2 className="w-3.5 h-3.5" />Delete team
-                </button>
+                <button onClick={() => setConfirmDelete(true)} className="btn btn-danger w-full"><Trash2 className="w-3.5 h-3.5" />Delete team</button>
               ) : (
                 <div className="p-4 rounded-lg" style={{ background: 'var(--danger-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
                   <p className="font-semibold mb-3" style={{ fontSize: 14, color: 'var(--danger)' }}>Delete "{team.name}"? This cannot be undone.</p>
-                  <div className="flex gap-2">
-                    <button onClick={handleDelete} className="btn btn-danger flex-1">Yes, delete</button>
-                    <button onClick={() => setConfirmDelete(false)} className="btn btn-secondary flex-1">Cancel</button>
-                  </div>
+                  <div className="flex gap-2"><button onClick={handleDelete} className="btn btn-danger flex-1">Yes, delete</button><button onClick={() => setConfirmDelete(false)} className="btn btn-secondary flex-1">Cancel</button></div>
                 </div>
               )}
             </div>
           )}
         </div>
-
         {isAdmin && team.leaderPhone && (
           <div className="flex gap-3 px-5 py-4 border-t" style={{ borderColor: 'var(--border)', paddingBottom: 'calc(16px + var(--safe-bottom))' }}>
-            <button onClick={() => { setBroadcastOpen(true); onClose(); }} className="btn btn-secondary flex-1">
-              <MessageSquare className="w-4 h-4" />Message
-            </button>
-            <a href={`https://wa.me/${team.leaderPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener"
-              className="btn flex-1 font-semibold text-white" style={{ background: '#25D366' }}>
-              <Phone className="w-4 h-4" />WhatsApp
-            </a>
+            <button onClick={() => { setBroadcastOpen(true); onClose(); }} className="btn btn-secondary flex-1"><MessageSquare className="w-4 h-4" />Message</button>
+            <a href={`https://wa.me/${team.leaderPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener" className="btn flex-1 font-semibold text-white" style={{ background: '#25D366' }}><Phone className="w-4 h-4" />WhatsApp</a>
           </div>
         )}
       </div>

@@ -4,40 +4,21 @@ import { api } from '@/lib/api';
 export type TeamStatus = 'REGISTERED' | 'CHECKED_IN' | 'ACTIVE' | 'SUBMITTED' | 'DISQUALIFIED';
 
 export interface Participant {
-  id: string;
-  name: string;
-  email?: string;
-  phone?: string;
-  isLeader: boolean;
+  id: string; name: string; email?: string; phone?: string; isLeader: boolean;
 }
 
 export interface Team {
-  id: string;
-  hackathonId: string;
-  name: string;
-  status: TeamStatus;
-  room?: string;
-  tableNumber?: string;
-  projectName?: string;
-  projectUrl?: string;
-  notes?: string;
-  leaderPhone?: string;
-  checkInTime?: string;
-  submissionTime?: string;
-  coordinatorId?: string;
-  coordinator?: { id: string; name: string } | null;
+  id: string; hackathonId: string; name: string; status: TeamStatus;
+  room?: string; tableNumber?: string; projectName?: string; projectUrl?: string;
+  notes?: string; leaderPhone?: string; checkInTime?: string; submissionTime?: string;
+  coordinatorId?: string; coordinator?: { id: string; name: string } | null;
   problemStatement?: { id: string; title: string } | null;
-  participants: Participant[];
-  createdAt: string;
-  updatedAt: string;
+  participants: Participant[]; createdAt: string; updatedAt: string;
 }
 
 interface TeamsState {
-  teams: Team[];
-  loading: boolean;
-  search: string;
-  statusFilter: TeamStatus | 'ALL';
-  selectedTeam: Team | null;
+  teams: Team[]; loading: boolean; search: string;
+  statusFilter: TeamStatus | 'ALL'; selectedTeam: Team | null;
   fetchTeams: (hackathonId: string) => Promise<void>;
   createTeam: (hackathonId: string, data: Partial<Team>) => Promise<Team>;
   updateTeam: (hackathonId: string, id: string, data: Partial<Team>) => Promise<Team>;
@@ -52,26 +33,19 @@ interface TeamsState {
 }
 
 export const useTeamsStore = create<TeamsState>((set, get) => ({
-  teams: [],
-  loading: false,
-  search: '',
-  statusFilter: 'ALL',
-  selectedTeam: null,
+  teams: [], loading: false, search: '', statusFilter: 'ALL', selectedTeam: null,
 
   fetchTeams: async (hackathonId) => {
     set({ loading: true });
     try {
       const teams = await api.get<Team[]>(`/hackathons/${hackathonId}/teams`);
       set({ teams, loading: false });
-    } catch {
-      set({ loading: false });
-    }
+    } catch { set({ loading: false }); }
   },
 
   createTeam: async (hackathonId, data) => {
     const team = await api.post<Team>(`/hackathons/${hackathonId}/teams`, data);
-    get().upsertTeam(team);
-    return team;
+    get().upsertTeam(team); return team;
   },
 
   updateTeam: async (hackathonId, id, data) => {
@@ -96,18 +70,13 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
 
   undoCheckIn: async (hackathonId, id) => {
     const team = await api.post<Team>(`/hackathons/${hackathonId}/teams/${id}/undo-checkin`);
-    get().upsertTeam(team);
-    return team;
+    get().upsertTeam(team); return team;
   },
 
   upsertTeam: (team) => {
     set((s) => {
       const idx = s.teams.findIndex((t) => t.id === team.id);
-      if (idx >= 0) {
-        const updated = [...s.teams];
-        updated[idx] = team;
-        return { teams: updated };
-      }
+      if (idx >= 0) { const updated = [...s.teams]; updated[idx] = team; return { teams: updated }; }
       return { teams: [team, ...s.teams] };
     });
   },
@@ -121,9 +90,7 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
     return teams.filter((t) => {
       const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
       const q = search.toLowerCase();
-      const matchSearch =
-        !q ||
-        t.name.toLowerCase().includes(q) ||
+      const matchSearch = !q || t.name.toLowerCase().includes(q) ||
         t.participants.some((p) => p.name.toLowerCase().includes(q)) ||
         t.room?.toLowerCase().includes(q);
       return matchStatus && matchSearch;

@@ -6,10 +6,10 @@ import { useTeamsStore } from '@/store/teamsStore';
 import { api } from '@/lib/api';
 
 type Channel = 'WHATSAPP' | 'SMS' | 'INTERNAL';
-const CHANNELS: { value: Channel; label: string; icon: typeof Send; desc: string }[] = [
-  { value: 'WHATSAPP', label: 'WhatsApp', icon: Smartphone, desc: 'WhatsApp Business' },
-  { value: 'SMS', label: 'SMS', icon: Globe, desc: 'Via Twilio' },
-  { value: 'INTERNAL', label: 'Internal', icon: MessageSquare, desc: 'Log only' },
+const CHANNELS = [
+  { value: 'WHATSAPP' as Channel, label: 'WhatsApp', icon: Smartphone, desc: 'WhatsApp Business' },
+  { value: 'SMS' as Channel, label: 'SMS', icon: Globe, desc: 'Via Twilio' },
+  { value: 'INTERNAL' as Channel, label: 'Internal', icon: MessageSquare, desc: 'Log only' },
 ];
 
 export function BroadcastSheet() {
@@ -27,11 +27,8 @@ export function BroadcastSheet() {
     if (!activeHackathon || !message.trim()) return;
     setSending(true);
     try {
-      const r = await api.post<{ queued: number }>(`/hackathons/${activeHackathon.id}/messages/broadcast`, {
-        content: message.trim(), channel, teamIds: recipientType === 'all' ? 'all' : selectedIds,
-      });
-      toast(`Queued for ${r.queued} teams`, 'success');
-      close();
+      const r = await api.post<{ queued: number }>(`/hackathons/${activeHackathon.id}/messages/broadcast`, { content: message.trim(), channel, teamIds: recipientType === 'all' ? 'all' : selectedIds });
+      toast(`Queued for ${r.queued} teams`, 'success'); close();
     } catch (e: any) { toast(e.message, 'error'); }
     finally { setSending(false); }
   };
@@ -52,8 +49,7 @@ export function BroadcastSheet() {
             <p className="text-label mb-2">Channel</p>
             <div className="grid grid-cols-3 gap-2">
               {CHANNELS.map(({ value, label, icon: Icon, desc }) => (
-                <button key={value} onClick={() => setChannel(value)}
-                  className="flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all duration-150"
+                <button key={value} onClick={() => setChannel(value)} className="flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all duration-150"
                   style={{ borderColor: channel === value ? '#0A0A0A' : 'var(--border)', background: channel === value ? 'var(--bg-subtle)' : 'var(--bg)' }}>
                   <Icon className="w-4 h-4" style={{ color: channel === value ? '#0A0A0A' : 'var(--text-muted)' }} />
                   <p className="font-semibold" style={{ fontSize: 12 }}>{label}</p>
@@ -63,32 +59,7 @@ export function BroadcastSheet() {
             </div>
           </div>
           <div>
-            <p className="text-label mb-2">Recipients</p>
-            <div className="flex gap-2">
-              {(['all', 'selected'] as const).map((t) => (
-                <button key={t} onClick={() => setRecipientType(t)}
-                  className="flex-1 py-2.5 rounded-lg font-semibold border-2 transition-all duration-150 text-sm"
-                  style={{ borderColor: recipientType === t ? '#0A0A0A' : 'var(--border)', background: recipientType === t ? '#0A0A0A' : 'var(--bg)', color: recipientType === t ? 'white' : 'var(--text-secondary)' }}>
-                  {t === 'all' ? `All (${teams.length})` : `Select${selectedIds.length > 0 ? ` (${selectedIds.length})` : ''}`}
-                </button>
-              ))}
-            </div>
-            {recipientType === 'selected' && (
-              <div className="mt-2 rounded-lg border overflow-hidden max-h-40 overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
-                {teams.map((t) => (
-                  <label key={t.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b last:border-0 hover:bg-[var(--bg-subtle)]" style={{ borderColor: 'var(--border)' }}>
-                    <input type="checkbox" checked={selectedIds.includes(t.id)}
-                      onChange={() => setSelectedIds((p) => p.includes(t.id) ? p.filter((x) => x !== t.id) : [...p, t.id])}
-                      className="w-4 h-4 rounded" style={{ accentColor: '#0A0A0A' }} />
-                    <span style={{ fontSize: 14, fontWeight: 500 }}>{t.name}</span>
-                  </label>
-                ))}
-              </div>
-            )}
-          </div>
-          <div>
-            <p className="text-label mb-2">Message</p>
-            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} maxLength={500} placeholder="Type your message…" className="input" style={{ height: 'auto' }} />
+            <textarea value={message} onChange={(e) => setMessage(e.target.value)} rows={4} maxLength={500} placeholder="Type your message to all teams..." className="input" style={{ height: 'auto' }} />
             <p className="text-right text-caption mt-1">{message.length}/500</p>
           </div>
         </div>

@@ -12,17 +12,8 @@ interface MsgLog {
   sentBy: { name: string };
   recipients: { id: string; status: string; team: { name: string }; error?: string }[];
 }
-
-const CHANNEL_STYLE: Record<string, string> = {
-  WHATSAPP: 'text-[var(--success)] bg-[var(--success-bg)]',
-  SMS: 'text-[var(--blue)] bg-[var(--blue-bg)]',
-  INTERNAL: 'text-[var(--text-muted)] bg-[var(--bg-muted)]',
-};
-
-const STATUS_DOT: Record<string, string> = {
-  SENT: 'bg-[var(--success)]', FAILED: 'bg-[var(--danger)]',
-  QUEUED: 'bg-[var(--warning)]', PENDING: 'bg-[var(--border-strong)]',
-};
+const CHANNEL_STYLE: Record<string, string> = { WHATSAPP: 'text-[var(--success)] bg-[var(--success-bg)]', SMS: 'text-[var(--blue)] bg-[var(--blue-bg)]', INTERNAL: 'text-[var(--text-muted)] bg-[var(--bg-muted)]' };
+const STATUS_DOT: Record<string, string> = { SENT: 'bg-[var(--success)]', FAILED: 'bg-[var(--danger)]', QUEUED: 'bg-[var(--warning)]', PENDING: 'bg-[var(--border-strong)]' };
 
 export function MessagesPage() {
   const { activeHackathon } = useHackathonStore();
@@ -32,7 +23,6 @@ export function MessagesPage() {
   const [messages, setMessages] = useState<MsgLog[]>([]);
   const [loading, setLoading] = useState(true);
   const [expanded, setExpanded] = useState<string | null>(null);
-  const [retrying, setRetrying] = useState<string | null>(null);
 
   const load = async () => {
     if (!activeHackathon) return;
@@ -48,17 +38,6 @@ export function MessagesPage() {
     return () => { socket.off('message:status', load); };
   }, [activeHackathon?.id]);
 
-  const retry = async (id: string) => {
-    if (!activeHackathon) return;
-    setRetrying(id);
-    try {
-      await api.post(`/hackathons/${activeHackathon.id}/messages/${id}/retry`);
-      toast('Retrying failed recipients…', 'info');
-      setTimeout(load, 2000);
-    } catch (e: any) { toast(e.message, 'error'); }
-    finally { setRetrying(null); }
-  };
-
   return (
     <div className="max-w-2xl mx-auto px-5 py-6">
       <div className="flex items-center justify-between mb-6">
@@ -68,16 +47,8 @@ export function MessagesPage() {
           {isAdmin && <button className="btn btn-primary btn-sm" onClick={() => setBroadcastOpen(true)}><Send className="w-3.5 h-3.5" />Broadcast</button>}
         </div>
       </div>
-
       {loading ? (
-        <div className="space-y-2">
-          {[...Array(4)].map((_, i) => (
-            <div key={i} className="card p-4">
-              <div className="skeleton h-4 w-2/3 rounded mb-2" />
-              <div className="skeleton h-3 w-1/3 rounded" />
-            </div>
-          ))}
-        </div>
+        <div className="space-y-2">{[...Array(4)].map((_, i) => <div key={i} className="card p-4"><div className="skeleton h-4 w-2/3 rounded mb-2" /><div className="skeleton h-3 w-1/3 rounded" /></div>)}</div>
       ) : messages.length === 0 ? (
         <div className="empty-state">
           <div className="empty-icon"><Send className="w-5 h-5" style={{ color: 'var(--text-muted)' }} /></div>
@@ -93,8 +64,7 @@ export function MessagesPage() {
             const isExp = expanded === msg.id;
             return (
               <div key={msg.id} className="card overflow-hidden">
-                <button onClick={() => setExpanded(isExp ? null : msg.id)}
-                  className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-[var(--bg-subtle)] transition-colors duration-100">
+                <button onClick={() => setExpanded(isExp ? null : msg.id)} className="w-full flex items-center gap-3 px-4 py-4 text-left hover:bg-[var(--bg-subtle)] transition-colors duration-100">
                   <div className={cn('dot flex-shrink-0', STATUS_DOT[msg.status] || 'bg-[var(--border-strong)]')} />
                   <div className="flex-1 min-w-0">
                     <p className="font-medium truncate" style={{ fontSize: 14 }}>{msg.content}</p>
@@ -111,27 +81,13 @@ export function MessagesPage() {
                 </button>
                 {isExp && (
                   <div className="border-t" style={{ borderColor: 'var(--border)', background: 'var(--bg-subtle)' }}>
-                    <div className="divide-y" style={{ borderColor: 'var(--border)' }}>
-                      {msg.recipients.slice(0, 20).map((r) => (
-                        <div key={r.id} className="flex items-center gap-3 px-4 py-2.5">
-                          {r.status === 'SENT'
-                            ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} />
-                            : r.status === 'FAILED'
-                            ? <XCircle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--danger)' }} />
-                            : <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--warning)' }} />}
-                          <span className="flex-1" style={{ fontSize: 13 }}>{r.team.name}</span>
-                          {r.error && <span className="text-caption" style={{ color: 'var(--danger)' }}>{r.error}</span>}
-                        </div>
-                      ))}
-                    </div>
-                    {failed > 0 && isAdmin && (
-                      <div className="px-4 py-3 border-t" style={{ borderColor: 'var(--border)' }}>
-                        <button onClick={() => retry(msg.id)} disabled={retrying === msg.id} className="btn btn-danger btn-sm">
-                          {retrying === msg.id ? <div className="spinner" style={{ width: 14, height: 14, borderTopColor: 'var(--danger)' }} /> : <RefreshCw className="w-3.5 h-3.5" />}
-                          Retry {failed} failed
-                        </button>
+                    {msg.recipients.slice(0, 20).map((r) => (
+                      <div key={r.id} className="flex items-center gap-3 px-4 py-2.5">
+                        {r.status === 'SENT' ? <CheckCircle2 className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--success)' }} /> : r.status === 'FAILED' ? <XCircle className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--danger)' }} /> : <Clock className="w-3.5 h-3.5 flex-shrink-0" style={{ color: 'var(--warning)' }} />}
+                        <span className="flex-1" style={{ fontSize: 13 }}>{r.team.name}</span>
+                        {r.error && <span className="text-caption" style={{ color: 'var(--danger)' }}>{r.error}</span>}
                       </div>
-                    )}
+                    ))}
                   </div>
                 )}
               </div>

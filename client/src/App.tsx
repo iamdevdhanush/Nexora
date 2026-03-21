@@ -23,22 +23,8 @@ export default function App() {
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
         <Route path="/join/:token" element={<JoinPage />} />
-        <Route
-          path="/coordinator"
-          element={
-            <Guard>
-              <CoordinatorView />
-            </Guard>
-          }
-        />
-        <Route
-          path="/"
-          element={
-            <Guard>
-              <AppShell />
-            </Guard>
-          }
-        >
+        <Route path="/coordinator" element={<Guard><CoordinatorView /></Guard>} />
+        <Route path="/" element={<Guard><AppShell /></Guard>}>
           <Route index element={<DashboardPage />} />
           <Route path="hackathons" element={<HackathonsPage />} />
           <Route path="hackathons/:id" element={<HackathonDashboardPage />} />

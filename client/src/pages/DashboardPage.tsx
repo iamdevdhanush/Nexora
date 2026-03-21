@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Users, UserCheck, Send, Table2, Zap, Clock, Link2 } from 'lucide-react';
+import { ArrowUpRight, Users, UserCheck, Send, Zap, Clock, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
@@ -18,7 +18,7 @@ interface Metrics {
 export function DashboardPage() {
   const { activeHackathon } = useHackathonStore();
   const { teams } = useTeamsStore();
-  const { setBroadcastOpen, setSheetsOpen, setCreateHackathonOpen, setInviteOpen } = useUIStore();
+  const { setBroadcastOpen, setCreateHackathonOpen, setInviteOpen } = useUIStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'SUPER_ADMIN';
@@ -135,21 +135,6 @@ export function DashboardPage() {
         )}
       </div>
 
-      {metrics && (
-        <div className="grid grid-cols-2 gap-3 mb-5">
-          <div className="metric-card">
-            <p className="text-label mb-3">Participants</p>
-            <p className="font-bold" style={{ fontSize: 28, lineHeight: 1 }}>{metrics.totalParticipants}</p>
-            <p className="text-caption mt-1.5">Total across all teams</p>
-          </div>
-          <div className="metric-card">
-            <p className="text-label mb-3">Messages today</p>
-            <p className="font-bold" style={{ fontSize: 28, lineHeight: 1 }}>{metrics.messagesToday}</p>
-            <p className="text-caption mt-1.5">Broadcasts sent</p>
-          </div>
-        </div>
-      )}
-
       {recentCheckins.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
@@ -170,9 +155,6 @@ export function DashboardPage() {
                 </div>
                 <div className="flex items-center gap-2 flex-shrink-0">
                   <span className={cn('badge', `badge-${team.status.toLowerCase()}`)}>{team.status.replace('_', ' ')}</span>
-                  {team.checkInTime && (
-                    <span className="text-caption font-mono">{new Date(team.checkInTime).toLocaleTimeString('en', { hour: '2-digit', minute: '2-digit' })}</span>
-                  )}
                 </div>
               </div>
             ))}
