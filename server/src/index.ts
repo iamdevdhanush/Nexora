@@ -25,12 +25,13 @@ const httpServer = createServer(app);
 app.set('trust proxy', 1);
 
 export const io = new SocketServer(httpServer, {
-  cors: { origin: true,
+  cors: { origin: true
+}
 });
 
 app.use(helmet({ contentSecurityPolicy: false }));
 app.use(cors({ origin: true,
-app.use(express.json({ limit: '10mb' }));
+credentials: true }));
 app.use('/api', apiLimiter);
 
 app.use('/api/auth', authRouter);
