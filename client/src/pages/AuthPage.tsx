@@ -1,19 +1,17 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { Zap, ArrowRight, ArrowLeft, Shield } from 'lucide-react';
+import { ArrowRight, Shield, Zap, ChevronLeft } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 import { cn } from '@/lib/utils';
 
-type Step = 'contact' | 'otp' | 'name';
+type Step = 'contact' | 'otp';
 
 export function AuthPage() {
   const [step, setStep] = useState<Step>('contact');
   const [contact, setContact] = useState('');
   const [otp, setOtp] = useState('');
-  const [name, setName] = useState('');
   const [devOtp, setDevOtp] = useState('');
-  const [isNew, setIsNew] = useState(false);
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const navigate = useNavigate();
@@ -24,7 +22,9 @@ export function AuthPage() {
     setLoading(true);
     setError('');
     try {
-      const res = await api.post<{ message: string; devOtp?: string }>('/auth/otp/request', { contact: contact.trim() });
+      const res = await api.post<{ message: string; devOtp?: string }>('/auth/otp/request', {
+        contact: contact.trim(),
+      });
       if (res.devOtp) setDevOtp(res.devOtp);
       setStep('otp');
     } catch (e: any) {
@@ -42,43 +42,60 @@ export function AuthPage() {
       const res = await api.post<{ token: string; user: any }>('/auth/otp/verify', {
         contact: contact.trim(),
         code: otp,
-        ...(name && { name }),
       });
       setAuth(res.user, res.token);
       navigate('/', { replace: true });
     } catch (e: any) {
-      if (e.message.includes('Invalid')) setError('Wrong code. Check and try again.');
-      else setError(e.message);
+      setError('Invalid code. Please try again.');
     } finally {
       setLoading(false);
     }
   };
 
   return (
-    <div className="min-h-screen bg-ink flex flex-col">
-      {/* Top decoration */}
-      <div className="flex-1 flex flex-col justify-end px-6 pb-8 pt-safe">
-        {/* Logo area */}
-        <div className="mb-12">
-          <div className="w-14 h-14 bg-white/10 rounded-3xl flex items-center justify-center mb-6">
-            <Zap className="w-7 h-7 text-white" strokeWidth={2.5} />
-          </div>
-          <h1 className="text-white text-[32px] font-bold leading-tight tracking-tight mb-2">
-            {step === 'contact' && <>Welcome to<br />Nexora</>}
-            {step === 'otp' && <>Enter your<br />code</>}
-            {step === 'name' && <>What should<br />we call you?</>}
+    <div className="min-h-screen bg-[#0A0A0A] flex flex-col relative overflow-hidden">
+      {/* Ambient glow */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background: 'radial-gradient(ellipse at 60% 0%, rgba(124, 58, 237, 0.15) 0%, transparent 55%)',
+        }}
+      />
+
+      {/* Header */}
+      <header className="relative z-10 flex items-center gap-2 px-6 py-5">
+        <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center">
+          <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+        </div>
+        <span className="text-white/70 font-medium text-sm tracking-tight">Nexora</span>
+      </header>
+
+      {/* Main content */}
+      <div className="relative z-10 flex-1 flex flex-col justify-end px-6 pb-12 max-w-sm mx-auto w-full">
+        {/* Headline */}
+        <div className="mb-8">
+          <h1 className="text-white font-bold tracking-tight mb-2" style={{ fontSize: 30, lineHeight: 1.15 }}>
+            {step === 'contact' ? (
+              <>Sign in to<br />your workspace</>
+            ) : (
+              <>Verify your<br />identity</>
+            )}
           </h1>
-          <p className="text-white/50 text-[15px] leading-relaxed">
-            {step === 'contact' && 'Sign in with your email or phone number'}
-            {step === 'otp' && `Sent to ${contact}`}
-            {step === 'name' && "This is how you'll appear to your team"}
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
+            {step === 'contact'
+              ? 'Enter your email or phone to continue'
+              : `We sent a code to ${contact}`}
           </p>
         </div>
 
         {/* Form */}
         <div className="space-y-3">
+          {/* Error */}
           {error && (
-            <div className="bg-danger-soft border border-danger/20 rounded-2xl px-4 py-3 text-sm text-danger">
+            <div
+              className="px-4 py-3 rounded-lg text-sm"
+              style={{ background: 'rgba(220, 38, 38, 0.1)', color: '#FCA5A5', border: '1px solid rgba(220,38,38,0.2)' }}
+            >
               {error}
             </div>
           )}
@@ -92,29 +109,58 @@ export function AuthPage() {
                 value={contact}
                 onChange={(e) => setContact(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && requestOtp()}
-                placeholder="email or +91 phone"
-                className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white placeholder:text-white/30 text-[15px] focus:border-white/30 transition-colors"
+                placeholder="email or phone number"
+                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none transition-all duration-150"
+                style={{
+                  height: 48,
+                  fontSize: 15,
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
               />
               <button
                 onClick={requestOtp}
                 disabled={loading || !contact.trim()}
-                className="w-full flex items-center justify-center gap-2 py-4 bg-white text-ink font-semibold rounded-2xl text-[15px] disabled:opacity-40 press"
+                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 press"
+                style={{
+                  height: 48,
+                  fontSize: 15,
+                  background: 'white',
+                  color: '#0A0A0A',
+                  opacity: loading || !contact.trim() ? 0.5 : 1,
+                }}
               >
-                {loading ? <div className="w-5 h-5 border-2 border-ink/20 border-t-ink rounded-full animate-spin" /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                {loading ? (
+                  <div className="spinner" style={{ width: 18, height: 18 }} />
+                ) : (
+                  <>Continue <ArrowRight className="w-4 h-4" /></>
+                )}
               </button>
             </>
           )}
 
           {step === 'otp' && (
             <>
+              {/* Dev banner */}
               {devOtp && (
-                <div className="bg-white/10 border border-white/10 rounded-2xl px-4 py-3 flex items-center gap-2">
-                  <Shield className="w-4 h-4 text-white/50 flex-shrink-0" />
-                  <span className="text-white/50 text-xs">Dev OTP: </span>
-                  <span className="text-white font-mono font-bold tracking-[0.2em]">{devOtp}</span>
+                <div
+                  className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer"
+                  style={{ background: 'rgba(124, 58, 237, 0.12)', border: '1px solid rgba(124,58,237,0.2)' }}
+                  onClick={() => setOtp(devOtp)}
+                >
+                  <Shield className="w-4 h-4 flex-shrink-0" style={{ color: '#A78BFA' }} />
+                  <div>
+                    <p style={{ fontSize: 11, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Dev Mode</p>
+                    <p className="font-mono font-bold text-white" style={{ fontSize: 18, letterSpacing: '0.15em' }}>
+                      {devOtp}
+                    </p>
+                  </div>
+                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>tap to fill</span>
                 </div>
               )}
-              {/* OTP digit input */}
+
               <input
                 type="number"
                 inputMode="numeric"
@@ -124,28 +170,53 @@ export function AuthPage() {
                 onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                 onKeyDown={(e) => e.key === 'Enter' && otp.length === 6 && verifyOtp()}
                 placeholder="000000"
-                className="w-full px-4 py-4 bg-white/10 border border-white/10 rounded-2xl text-white placeholder:text-white/20 text-[24px] font-mono text-center tracking-[0.3em] focus:border-white/30 transition-colors"
+                className="w-full text-center font-mono font-bold text-white placeholder:text-white/20 outline-none rounded-lg transition-all duration-150"
+                style={{
+                  height: 56,
+                  fontSize: 28,
+                  letterSpacing: '0.25em',
+                  background: 'rgba(255,255,255,0.07)',
+                  border: '1px solid rgba(255,255,255,0.1)',
+                }}
+                onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
               />
+
               <button
                 onClick={verifyOtp}
                 disabled={loading || otp.length !== 6}
-                className="w-full flex items-center justify-center gap-2 py-4 bg-white text-ink font-semibold rounded-2xl text-[15px] disabled:opacity-40 press"
+                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 press"
+                style={{
+                  height: 48,
+                  fontSize: 15,
+                  background: 'white',
+                  color: '#0A0A0A',
+                  opacity: loading || otp.length !== 6 ? 0.5 : 1,
+                }}
               >
-                {loading ? <div className="w-5 h-5 border-2 border-ink/20 border-t-ink rounded-full animate-spin" /> : <>Verify <ArrowRight className="w-4 h-4" /></>}
+                {loading ? (
+                  <div className="spinner" style={{ width: 18, height: 18 }} />
+                ) : (
+                  <>Verify <ArrowRight className="w-4 h-4" /></>
+                )}
               </button>
+
               <button
                 onClick={() => { setStep('contact'); setOtp(''); setError(''); }}
-                className="w-full flex items-center justify-center gap-2 py-3 text-white/40 text-sm"
+                className="w-full flex items-center justify-center gap-1.5 transition-colors duration-150"
+                style={{ height: 40, fontSize: 13, color: 'rgba(255,255,255,0.35)' }}
               >
-                <ArrowLeft className="w-4 h-4" /> Back
+                <ChevronLeft className="w-3.5 h-3.5" /> Back
               </button>
             </>
           )}
         </div>
-      </div>
 
-      {/* Bottom safe area fill */}
-      <div className="bg-ink" style={{ height: 'var(--safe-bottom)' }} />
+        {/* Footer note */}
+        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 24, lineHeight: 1.6 }}>
+          By continuing, you agree to our terms of service and privacy policy.
+        </p>
+      </div>
     </div>
   );
 }

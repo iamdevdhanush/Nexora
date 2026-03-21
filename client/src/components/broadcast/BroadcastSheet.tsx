@@ -9,9 +9,9 @@ import { cn } from '@/lib/utils';
 type Channel = 'WHATSAPP' | 'SMS' | 'INTERNAL';
 
 const CHANNELS: { value: Channel; label: string; icon: typeof Send; desc: string }[] = [
-  { value: 'WHATSAPP', label: 'WhatsApp', icon: Smartphone, desc: 'Via WhatsApp Business' },
-  { value: 'SMS', label: 'SMS', icon: Globe, desc: 'Via Twilio/MSG91' },
-  { value: 'INTERNAL', label: 'Log only', icon: MessageSquare, desc: 'Dashboard log' },
+  { value: 'WHATSAPP', label: 'WhatsApp', icon: Smartphone, desc: 'WhatsApp Business' },
+  { value: 'SMS', label: 'SMS', icon: Globe, desc: 'Via Twilio' },
+  { value: 'INTERNAL', label: 'Internal', icon: MessageSquare, desc: 'Log only' },
 ];
 
 export function BroadcastSheet() {
@@ -31,11 +31,14 @@ export function BroadcastSheet() {
     if (!activeHackathon || !message.trim()) return;
     setSending(true);
     try {
-      const r = await api.post<{ queued: number }>(`/hackathons/${activeHackathon.id}/messages/broadcast`, {
-        content: message.trim(),
-        channel,
-        teamIds: recipientType === 'all' ? 'all' : selectedIds,
-      });
+      const r = await api.post<{ queued: number }>(
+        `/hackathons/${activeHackathon.id}/messages/broadcast`,
+        {
+          content: message.trim(),
+          channel,
+          teamIds: recipientType === 'all' ? 'all' : selectedIds,
+        }
+      );
       toast(`Queued for ${r.queued} teams`, 'success');
       close();
     } catch (e: any) { toast(e.message, 'error'); }
@@ -46,42 +49,38 @@ export function BroadcastSheet() {
 
   return (
     <>
-      <div className="fixed inset-0 z-50 bg-black/40 backdrop-blur-[2px] animate-fade-in" onClick={close} />
-      <div className="fixed inset-x-0 bottom-0 z-50 bg-surface rounded-t-3xl shadow-modal animate-slide-up max-h-[90vh] flex flex-col">
-        {/* Handle */}
-        <div className="flex-shrink-0 flex justify-center pt-3 pb-2">
-          <div className="w-10 h-1 bg-line rounded-full" />
-        </div>
+      <div className="overlay animate-fade-in" onClick={close} />
+      <div className="sheet animate-slide-up flex flex-col" style={{ maxHeight: '90vh' }}>
+        <div className="sheet-handle" />
 
-        {/* Header */}
-        <div className="flex items-center justify-between px-5 pb-4 flex-shrink-0">
+        <div className="flex items-center justify-between px-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
           <div>
-            <h2 className="font-bold text-base">Broadcast</h2>
-            <p className="text-xs text-ink-ghost mt-0.5">Send message to teams</p>
+            <h2 className="font-bold" style={{ fontSize: 16 }}>Broadcast</h2>
+            <p className="text-caption mt-0.5">Send a message to teams</p>
           </div>
-          <button onClick={close} className="w-8 h-8 rounded-full bg-line/60 flex items-center justify-center">
-            <X className="w-4 h-4 text-ink-muted" />
+          <button className="btn btn-ghost btn-icon btn-sm" onClick={close}>
+            <X className="w-4 h-4" />
           </button>
         </div>
 
-        {/* Body */}
-        <div className="flex-1 overflow-y-auto px-5 pb-4 space-y-4">
+        <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
           {/* Channel */}
           <div>
-            <p className="section-label">Channel</p>
+            <p className="text-label mb-2">Channel</p>
             <div className="grid grid-cols-3 gap-2">
               {CHANNELS.map(({ value, label, icon: Icon, desc }) => (
                 <button
                   key={value}
                   onClick={() => setChannel(value)}
-                  className={cn(
-                    'flex flex-col items-start gap-1.5 p-3 rounded-2xl border-2 text-left transition-all press-sm',
-                    channel === value ? 'border-ink bg-ink/4' : 'border-line hover:border-line-strong'
-                  )}
+                  className="flex flex-col items-start gap-2 p-3 rounded-lg border-2 text-left transition-all duration-150"
+                  style={{
+                    borderColor: channel === value ? '#0A0A0A' : 'var(--border)',
+                    background: channel === value ? 'var(--bg-subtle)' : 'var(--bg)',
+                  }}
                 >
-                  <Icon className={cn('w-4 h-4', channel === value ? 'text-ink' : 'text-ink-ghost')} />
-                  <p className="text-xs font-bold">{label}</p>
-                  <p className="text-[10px] text-ink-ghost leading-tight">{desc}</p>
+                  <Icon className="w-4 h-4" style={{ color: channel === value ? '#0A0A0A' : 'var(--text-muted)' }} />
+                  <p className="font-semibold" style={{ fontSize: 12 }}>{label}</p>
+                  <p style={{ fontSize: 10, color: 'var(--text-muted)' }}>{desc}</p>
                 </button>
               ))}
             </div>
@@ -89,35 +88,56 @@ export function BroadcastSheet() {
 
           {/* Recipients */}
           <div>
-            <p className="section-label">Recipients</p>
+            <p className="text-label mb-2">Recipients</p>
             <div className="flex gap-2">
               <button
                 onClick={() => setRecipientType('all')}
-                className={cn('flex-1 py-2.5 rounded-2xl text-sm font-semibold border-2 transition-all press-sm',
-                  recipientType === 'all' ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-line-strong')}
+                className="flex-1 py-2.5 rounded-lg font-semibold border-2 transition-all duration-150 text-sm"
+                style={{
+                  borderColor: recipientType === 'all' ? '#0A0A0A' : 'var(--border)',
+                  background: recipientType === 'all' ? '#0A0A0A' : 'var(--bg)',
+                  color: recipientType === 'all' ? 'white' : 'var(--text-secondary)',
+                }}
               >
                 All ({teams.length})
               </button>
               <button
                 onClick={() => setRecipientType('selected')}
-                className={cn('flex-1 py-2.5 rounded-2xl text-sm font-semibold border-2 transition-all press-sm',
-                  recipientType === 'selected' ? 'border-ink bg-ink text-white' : 'border-line text-ink-muted hover:border-line-strong')}
+                className="flex-1 py-2.5 rounded-lg font-semibold border-2 transition-all duration-150 text-sm"
+                style={{
+                  borderColor: recipientType === 'selected' ? '#0A0A0A' : 'var(--border)',
+                  background: recipientType === 'selected' ? '#0A0A0A' : 'var(--bg)',
+                  color: recipientType === 'selected' ? 'white' : 'var(--text-secondary)',
+                }}
               >
                 Select {selectedIds.length > 0 && `(${selectedIds.length})`}
               </button>
             </div>
 
             {recipientType === 'selected' && (
-              <div className="mt-2 card-flat overflow-hidden max-h-40 overflow-y-auto divide-y divide-line/60">
+              <div
+                className="mt-2 rounded-lg border overflow-hidden max-h-40 overflow-y-auto"
+                style={{ borderColor: 'var(--border)' }}
+              >
                 {teams.map((t) => (
-                  <label key={t.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer">
+                  <label
+                    key={t.id}
+                    className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b last:border-0 transition-colors duration-100"
+                    style={{ borderColor: 'var(--border)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+                  >
                     <input
                       type="checkbox"
                       checked={selectedIds.includes(t.id)}
-                      onChange={() => setSelectedIds((p) => p.includes(t.id) ? p.filter((x) => x !== t.id) : [...p, t.id])}
-                      className="w-4 h-4 rounded accent-ink"
+                      onChange={() =>
+                        setSelectedIds((p) =>
+                          p.includes(t.id) ? p.filter((x) => x !== t.id) : [...p, t.id]
+                        )
+                      }
+                      className="w-4 h-4 rounded accent-[#0A0A0A]"
                     />
-                    <span className="text-sm font-medium">{t.name}</span>
+                    <span style={{ fontSize: 14, fontWeight: 500 }}>{t.name}</span>
                   </label>
                 ))}
               </div>
@@ -126,28 +146,35 @@ export function BroadcastSheet() {
 
           {/* Message */}
           <div>
-            <p className="section-label">Message</p>
+            <p className="text-label mb-2">Message</p>
             <textarea
               value={message}
               onChange={(e) => setMessage(e.target.value)}
               rows={4}
               maxLength={500}
-              placeholder={`"HackOS Alert: Team {name}, {message}"`}
-              className="input resize-none"
+              placeholder="Type your message…"
+              className="input"
+              style={{ height: 'auto' }}
             />
-            <p className="text-right text-xs text-ink-ghost mt-1">{message.length}/500</p>
+            <p className="text-right text-caption mt-1">{message.length}/500</p>
           </div>
         </div>
 
-        {/* Footer */}
-        <div className="flex-shrink-0 flex items-center justify-between px-5 py-4 border-t border-line/60 pb-safe">
-          <p className="text-sm text-ink-ghost">{count} recipient{count !== 1 ? 's' : ''}</p>
+        <div
+          className="flex items-center justify-between px-5 py-4 border-t"
+          style={{ borderColor: 'var(--border)', paddingBottom: 'calc(16px + var(--safe-bottom))' }}
+        >
+          <p className="text-caption">{count} recipient{count !== 1 ? 's' : ''}</p>
           <button
             onClick={send}
             disabled={sending || !message.trim() || count === 0}
-            className="btn-primary py-3 px-6 disabled:opacity-40"
+            className="btn btn-primary"
           >
-            {sending ? <div className="w-4 h-4 border-2 border-white/30 border-t-white rounded-full animate-spin" /> : <Send className="w-4 h-4" />}
+            {sending ? (
+              <div className="spinner-white" style={{ width: 14, height: 14 }} />
+            ) : (
+              <Send className="w-4 h-4" />
+            )}
             Send to {count}
           </button>
         </div>

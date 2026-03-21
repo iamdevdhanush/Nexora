@@ -1,5 +1,4 @@
 import { create } from 'zustand';
-import { persist } from 'zustand/middleware';
 
 export interface Toast {
   id: string;
@@ -13,7 +12,6 @@ interface UIState {
   sheetsOpen: boolean;
   createHackathonOpen: boolean;
   toasts: Toast[];
-
   setCommandOpen: (v: boolean) => void;
   setBroadcastOpen: (v: boolean) => void;
   setSheetsOpen: (v: boolean) => void;
@@ -40,5 +38,6 @@ export const useUIStore = create<UIState>((set, get) => ({
     setTimeout(() => get().dismissToast(id), 3500);
   },
 
-  dismissToast: (id) => set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
+  dismissToast: (id) =>
+    set((s) => ({ toasts: s.toasts.filter((t) => t.id !== id) })),
 }));

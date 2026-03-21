@@ -37,12 +37,13 @@ export const useHackathonStore = create<HackathonState>()(
         try {
           const hackathons = await api.get<Hackathon[]>('/hackathons');
           set({ hackathons, loading: false });
-          // Auto-select first active hackathon if none selected
           if (!get().activeHackathon && hackathons.length > 0) {
             const active = hackathons.find((h) => h.status === 'ACTIVE') || hackathons[0];
             set({ activeHackathon: active });
           }
-        } catch { set({ loading: false }); }
+        } catch {
+          set({ loading: false });
+        }
       },
 
       setActiveHackathon: (activeHackathon) => set({ activeHackathon }),
@@ -61,6 +62,9 @@ export const useHackathonStore = create<HackathonState>()(
         }));
       },
     }),
-    { name: 'nexora-hackathon', partialize: (s) => ({ activeHackathon: s.activeHackathon }) }
+    {
+      name: 'nexora-hackathon',
+      partialize: (s) => ({ activeHackathon: s.activeHackathon }),
+    }
   )
 );

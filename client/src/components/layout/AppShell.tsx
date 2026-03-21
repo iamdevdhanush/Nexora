@@ -1,22 +1,25 @@
 import { Outlet, NavLink, useNavigate } from 'react-router-dom';
 import { useEffect } from 'react';
-import { LayoutDashboard, Users, MessageSquare, Award, Zap } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, MessageSquare, Award } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
 import { useUIStore } from '@/store/uiStore';
-import { joinHackathon, leaveHackathon, getSocket, disconnectSocket } from '@/lib/socket';
+import { joinHackathon, leaveHackathon, getSocket } from '@/lib/socket';
 import { CommandPalette } from '@/components/command-palette/CommandPalette';
 import { BroadcastSheet } from '@/components/broadcast/BroadcastSheet';
 import { SheetsSheet } from '@/components/teams/SheetsSheet';
 import { CreateHackathonSheet } from '@/components/hackathons/CreateHackathonSheet';
+import { Toasts } from '@/components/ui/Toasts';
+import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
 import { cn } from '@/lib/utils';
 
-const NAV = [
+const BOTTOM_NAV = [
   { to: '/', label: 'Home', icon: LayoutDashboard, exact: true },
   { to: '/teams', label: 'Teams', icon: Users },
-  { to: '/messages', label: 'Msgs', icon: MessageSquare },
+  { to: '/checkin', label: 'Check-in', icon: UserCheck },
+  { to: '/messages', label: 'Messages', icon: MessageSquare },
   { to: '/certificates', label: 'Certs', icon: Award },
 ];
 
@@ -24,14 +27,11 @@ export function AppShell() {
   const { activeHackathon, fetchHackathons } = useHackathonStore();
   const { fetchTeams, upsertTeam } = useTeamsStore();
   const { broadcastOpen, sheetsOpen, createHackathonOpen, commandOpen } = useUIStore();
-  const { user } = useAuthStore();
 
-  // Fetch on mount
   useEffect(() => {
     fetchHackathons();
   }, []);
 
-  // Join hackathon room when activeHackathon changes
   useEffect(() => {
     if (!activeHackathon) return;
     fetchTeams(activeHackathon.id);
@@ -41,7 +41,6 @@ export function AppShell() {
 
     const onTeamUpdated = ({ payload }: any) => upsertTeam(payload);
     const onTeamCheckin = ({ payload }: any) => upsertTeam(payload.team);
-
     socket.on('team:updated', onTeamUpdated);
     socket.on('team:checkin', onTeamCheckin);
 
@@ -52,14 +51,16 @@ export function AppShell() {
     };
   }, [activeHackathon?.id]);
 
-  // Keyboard shortcut for command palette
   useEffect(() => {
     const handler = (e: KeyboardEvent) => {
       if ((e.metaKey || e.ctrlKey) && e.key === 'k') {
         e.preventDefault();
         useUIStore.getState().setCommandOpen(true);
       }
-      if (e.key === '/' && !['INPUT', 'TEXTAREA'].includes((document.activeElement as HTMLElement)?.tagName)) {
+      if (
+        e.key === '/' &&
+        !['INPUT', 'TEXTAREA'].includes((document.activeElement as HTMLElement)?.tagName)
+      ) {
         e.preventDefault();
         useUIStore.getState().setCommandOpen(true);
       }
@@ -69,54 +70,83 @@ export function AppShell() {
   }, []);
 
   return (
-    <div className="min-h-screen bg-surface flex flex-col">
-      <TopBar />
+    <div className="ambient-bg">
+      {/* Desktop: sidebar layout */}
+      <div className="hidden md:grid" style={{ gridTemplateColumns: '220px 1fr', minHeight: '100vh' }}>
+        <Sidebar />
+        <main
+          className="min-h-screen overflow-auto"
+          style={{ borderLeft: '1px solid var(--border)' }}
+        >
+          <Outlet />
+        </main>
+      </div>
 
-      {/* Main content */}
-      <main className="flex-1 overflow-auto pb-safe">
-        <Outlet />
-      </main>
+      {/* Mobile: stacked layout */}
+      <div className="md:hidden min-h-screen flex flex-col">
+        <TopBar />
+        <main className="flex-1 overflow-auto pb-nav">
+          <Outlet />
+        </main>
 
-      {/* Bottom Navigation */}
-      <nav className="fixed bottom-0 inset-x-0 z-40 bg-surface-overlay backdrop-blur-xl border-t border-line/60 bottom-nav shadow-bottom-nav">
-        <div className="flex items-center justify-around px-2 pt-2 pb-1 max-w-lg mx-auto">
-          {NAV.map(({ to, label, icon: Icon, exact }) => (
+        {/* Bottom nav */}
+        <nav
+          className="fixed bottom-0 inset-x-0 z-30 flex items-center"
+          style={{
+            height: 'calc(52px + var(--safe-bottom))',
+            paddingBottom: 'var(--safe-bottom)',
+            background: 'rgba(255,255,255,0.9)',
+            borderTop: '1px solid var(--border)',
+            backdropFilter: 'blur(12px)',
+            WebkitBackdropFilter: 'blur(12px)',
+          }}
+        >
+          {BOTTOM_NAV.map(({ to, label, icon: Icon, exact }) => (
             <NavLink
               key={to}
               to={to}
               end={exact}
-              className={({ isActive }) =>
-                cn(
-                  'flex flex-col items-center gap-0.5 px-4 py-1.5 rounded-2xl transition-all duration-150 min-w-[64px]',
-                  isActive
-                    ? 'text-ink'
-                    : 'text-ink-ghost hover:text-ink-muted'
-                )
-              }
+              className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 transition-colors duration-100"
             >
               {({ isActive }) => (
                 <>
-                  <div className={cn(
-                    'w-10 h-7 flex items-center justify-center rounded-xl transition-all duration-150',
-                    isActive ? 'bg-ink/8' : ''
-                  )}>
-                    <Icon className={cn('w-5 h-5 transition-all', isActive ? 'stroke-[2.5]' : 'stroke-[1.5]')} />
+                  <div
+                    className="w-9 h-6 flex items-center justify-center rounded-lg transition-colors duration-100"
+                    style={{ background: isActive ? 'var(--bg-muted)' : 'transparent' }}
+                  >
+                    <Icon
+                      className="w-4.5 h-4.5"
+                      style={{
+                        color: isActive ? 'var(--text)' : 'var(--text-muted)',
+                        strokeWidth: isActive ? 2.5 : 1.75,
+                        width: 18,
+                        height: 18,
+                      }}
+                    />
                   </div>
-                  <span className={cn('text-[10px] font-semibold tracking-wide transition-all', isActive ? 'text-ink' : 'text-ink-ghost')}>
+                  <span
+                    style={{
+                      fontSize: 10,
+                      fontWeight: isActive ? 600 : 500,
+                      color: isActive ? 'var(--text)' : 'var(--text-muted)',
+                      letterSpacing: '0.02em',
+                    }}
+                  >
                     {label}
                   </span>
                 </>
               )}
             </NavLink>
           ))}
-        </div>
-      </nav>
+        </nav>
+      </div>
 
       {/* Overlays */}
       {commandOpen && <CommandPalette />}
       {broadcastOpen && <BroadcastSheet />}
       {sheetsOpen && <SheetsSheet />}
       {createHackathonOpen && <CreateHackathonSheet />}
+      <Toasts />
     </div>
   );
 }

@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { Search, SlidersHorizontal, Download, UserCheck, ChevronRight } from 'lucide-react';
+import { Search, SlidersHorizontal, UserCheck, ChevronRight, X } from 'lucide-react';
 import { useTeamsStore, TeamStatus, Team } from '@/store/teamsStore';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useUIStore } from '@/store/uiStore';
@@ -10,17 +10,17 @@ import { cn, pluralize } from '@/lib/utils';
 const STATUS_TABS: { label: string; value: TeamStatus | 'ALL' }[] = [
   { label: 'All', value: 'ALL' },
   { label: 'Waiting', value: 'REGISTERED' },
-  { label: 'In', value: 'CHECKED_IN' },
+  { label: 'Checked in', value: 'CHECKED_IN' },
   { label: 'Active', value: 'ACTIVE' },
-  { label: 'Done', value: 'SUBMITTED' },
+  { label: 'Submitted', value: 'SUBMITTED' },
 ];
 
-const STATUS_DOT: Record<TeamStatus, string> = {
-  REGISTERED: 'bg-ink/20',
-  CHECKED_IN: 'bg-success',
-  ACTIVE: 'bg-amber',
-  SUBMITTED: 'bg-brand',
-  DISQUALIFIED: 'bg-danger',
+const STATUS_DOT: Record<string, string> = {
+  REGISTERED: 'bg-[var(--border-strong)]',
+  CHECKED_IN: 'bg-[var(--success)]',
+  ACTIVE: 'bg-[var(--warning)]',
+  SUBMITTED: 'bg-[var(--blue)]',
+  DISQUALIFIED: 'bg-[var(--danger)]',
 };
 
 export function TeamsPage() {
@@ -33,8 +33,9 @@ export function TeamsPage() {
 
   const handleQuickCheckin = async (e: React.MouseEvent, team: Team) => {
     e.stopPropagation();
+    if (!activeHackathon) return;
     try {
-      await checkIn(activeHackathon!.id, team.id);
+      await checkIn(activeHackathon.id, team.id);
       toast(`${team.name} checked in`, 'success');
     } catch (err: any) {
       toast(err.message, 'error');
@@ -42,99 +43,139 @@ export function TeamsPage() {
   };
 
   return (
-    <div className="flex flex-col h-full">
+    <div className="flex flex-col h-full max-w-3xl mx-auto">
       {/* Header */}
-      <div className="px-4 pt-4 pb-3 space-y-3 max-w-2xl mx-auto w-full">
-        <div className="flex items-center justify-between">
-          <h1 className="text-xl font-bold">Teams</h1>
-          <span className="text-ink-ghost text-sm font-medium">{teams.length} shown</span>
-        </div>
+      <div className="sticky top-0 z-10 bg-white border-b" style={{ borderColor: 'var(--border)' }}>
+        <div className="px-5 pt-5 pb-0">
+          <div className="flex items-center justify-between mb-4">
+            <h1 className="text-heading">Teams</h1>
+            <span className="text-caption">{teams.length} shown</span>
+          </div>
 
-        {/* Search */}
-        <div className="relative">
-          <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 text-ink-ghost" />
-          <input
-            type="search"
-            value={search}
-            onChange={(e) => setSearch(e.target.value)}
-            placeholder="Search teams or members…"
-            className="input pl-10"
-          />
-        </div>
+          {/* Search */}
+          <div className="relative mb-3">
+            <Search
+              className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none"
+              style={{ color: 'var(--text-disabled)' }}
+            />
+            <input
+              type="search"
+              value={search}
+              onChange={(e) => setSearch(e.target.value)}
+              placeholder="Search teams or members…"
+              className="input pl-9"
+            />
+            {search && (
+              <button
+                onClick={() => setSearch('')}
+                className="absolute right-3 top-1/2 -translate-y-1/2 w-4 h-4 flex items-center justify-center"
+              >
+                <X className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+              </button>
+            )}
+          </div>
 
-        {/* Status tabs */}
-        <div className="flex gap-1.5 overflow-x-auto scrollbar-none pb-0.5">
-          {STATUS_TABS.map((tab) => (
-            <button
-              key={tab.value}
-              onClick={() => setStatusFilter(tab.value)}
-              className={cn(
-                'flex-shrink-0 px-3.5 py-1.5 rounded-full text-xs font-semibold transition-all',
-                statusFilter === tab.value
-                  ? 'bg-ink text-white'
-                  : 'bg-line/60 text-ink-muted hover:bg-line'
-              )}
-            >
-              {tab.label}
-            </button>
-          ))}
+          {/* Status filter tabs */}
+          <div className="flex gap-1 overflow-x-auto scrollbar-none pb-3">
+            {STATUS_TABS.map((tab) => (
+              <button
+                key={tab.value}
+                onClick={() => setStatusFilter(tab.value)}
+                className="flex-shrink-0 px-3 py-1.5 rounded-md text-xs font-semibold transition-all duration-100"
+                style={{
+                  background: statusFilter === tab.value ? 'var(--text)' : 'var(--bg-muted)',
+                  color: statusFilter === tab.value ? 'white' : 'var(--text-secondary)',
+                }}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </div>
         </div>
       </div>
 
       {/* Table */}
-      <div className="flex-1 overflow-auto px-4 max-w-2xl mx-auto w-full">
+      <div className="flex-1 overflow-auto px-5 pb-6">
         {loading ? (
-          <div className="space-y-3">
-            {[...Array(6)].map((_, i) => (
-              <div key={i} className="h-16 skeleton" />
+          <div className="card overflow-hidden mt-4">
+            {[...Array(8)].map((_, i) => (
+              <div key={i} className="flex items-center gap-3 px-4 py-3.5 border-b" style={{ borderColor: 'var(--border)' }}>
+                <div className="skeleton w-6 h-6 rounded-full" />
+                <div className="flex-1 space-y-1.5">
+                  <div className="skeleton h-3.5 w-32 rounded" />
+                  <div className="skeleton h-3 w-20 rounded" />
+                </div>
+              </div>
             ))}
           </div>
         ) : teams.length === 0 ? (
-          <div className="flex flex-col items-center justify-center h-40 text-ink-ghost">
-            <SlidersHorizontal className="w-8 h-8 mb-2 opacity-30" />
-            <p className="text-sm">No teams match filters</p>
+          <div className="empty-state mt-8">
+            <div className="empty-icon">
+              <SlidersHorizontal className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+            </div>
+            <p className="font-medium" style={{ fontSize: 14 }}>No teams found</p>
+            <p className="text-caption mt-1">Try adjusting your filters</p>
+            <button
+              className="btn btn-secondary btn-sm mt-4"
+              onClick={() => { setSearch(''); setStatusFilter('ALL'); }}
+            >
+              Clear filters
+            </button>
           </div>
         ) : (
-          <div className="card overflow-hidden mb-4">
+          <div className="card overflow-hidden mt-4">
             {teams.map((team, i) => (
               <button
                 key={team.id}
                 onClick={() => setSelectedTeam(team)}
-                className={cn(
-                  'w-full flex items-center gap-3 px-4 py-3.5 text-left press-sm',
-                  i !== teams.length - 1 && 'border-b border-line/60'
-                )}
+                className="table-row w-full text-left"
               >
                 {/* Status dot */}
-                <div className={cn('w-2 h-2 rounded-full flex-shrink-0', STATUS_DOT[team.status])} />
+                <div
+                  className={cn('dot flex-shrink-0', STATUS_DOT[team.status] || 'bg-[var(--border-strong)]')}
+                />
 
                 {/* Avatar */}
-                <div className="w-8 h-8 rounded-full bg-ink/6 flex items-center justify-center text-xs font-bold text-ink flex-shrink-0">
+                <div
+                  className="w-7 h-7 rounded-md flex items-center justify-center text-white font-bold flex-shrink-0"
+                  style={{ fontSize: 10, background: '#0A0A0A' }}
+                >
                   {team.name[0]}
                 </div>
 
                 {/* Info */}
                 <div className="flex-1 min-w-0">
-                  <p className="font-semibold text-sm text-ink truncate">{team.name}</p>
-                  <p className="text-xs text-ink-ghost mt-0.5">
+                  <p className="font-semibold truncate" style={{ fontSize: 14 }}>
+                    {team.name}
+                  </p>
+                  <p className="text-caption">
                     {pluralize(team.participants.length, 'member')}
                     {team.room && ` · ${team.room}`}
                     {team.coordinator && ` · ${team.coordinator.name}`}
                   </p>
                 </div>
 
-                {/* Actions */}
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  {team.status === 'REGISTERED' && isAdmin && (
-                    <button
-                      onClick={(e) => handleQuickCheckin(e, team)}
-                      className="w-8 h-8 bg-success-soft rounded-xl flex items-center justify-center press-sm"
-                    >
-                      <UserCheck className="w-4 h-4 text-success" />
-                    </button>
-                  )}
-                  <ChevronRight className="w-4 h-4 text-ink-ghost" />
-                </div>
+                {/* Badge */}
+                <span
+                  className={cn('badge flex-shrink-0', `badge-${team.status.toLowerCase()}`)}
+                >
+                  {team.status.replace('_', ' ')}
+                </span>
+
+                {/* Quick check-in */}
+                {team.status === 'REGISTERED' && isAdmin && (
+                  <button
+                    onClick={(e) => handleQuickCheckin(e, team)}
+                    className="w-7 h-7 rounded-md flex items-center justify-center flex-shrink-0 transition-colors duration-100"
+                    style={{ background: 'var(--success-bg)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = '#dcfce7')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'var(--success-bg)')}
+                  >
+                    <UserCheck className="w-3.5 h-3.5" style={{ color: 'var(--success)' }} />
+                  </button>
+                )}
+
+                <ChevronRight className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-disabled)' }} />
               </button>
             ))}
           </div>

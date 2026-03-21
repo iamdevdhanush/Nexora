@@ -9,7 +9,6 @@ import { MessagesPage } from '@/pages/MessagesPage';
 import { CertificatesPage } from '@/pages/CertificatesPage';
 import { HackathonsPage } from '@/pages/HackathonsPage';
 import { CoordinatorView } from '@/pages/CoordinatorView';
-import { Toasts } from '@/components/ui/Toasts';
 
 function Guard({ children }: { children: React.ReactNode }) {
   const auth = useAuthStore((s) => s.isAuthenticated);
@@ -21,8 +20,22 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
-        <Route path="/coordinator" element={<Guard><CoordinatorView /></Guard>} />
-        <Route path="/" element={<Guard><AppShell /></Guard>}>
+        <Route
+          path="/coordinator"
+          element={
+            <Guard>
+              <CoordinatorView />
+            </Guard>
+          }
+        />
+        <Route
+          path="/"
+          element={
+            <Guard>
+              <AppShell />
+            </Guard>
+          }
+        >
           <Route index element={<DashboardPage />} />
           <Route path="hackathons" element={<HackathonsPage />} />
           <Route path="teams" element={<TeamsPage />} />
@@ -32,7 +45,6 @@ export default function App() {
         </Route>
         <Route path="*" element={<Navigate to="/" replace />} />
       </Routes>
-      <Toasts />
     </BrowserRouter>
   );
 }

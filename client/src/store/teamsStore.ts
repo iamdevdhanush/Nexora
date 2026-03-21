@@ -37,7 +37,6 @@ interface TeamsState {
   search: string;
   statusFilter: TeamStatus | 'ALL';
   selectedTeam: Team | null;
-
   fetchTeams: (hackathonId: string) => Promise<void>;
   updateTeam: (hackathonId: string, id: string, data: Partial<Team>) => Promise<Team>;
   checkIn: (hackathonId: string, id: string) => Promise<Team>;
@@ -61,7 +60,9 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
     try {
       const teams = await api.get<Team[]>(`/hackathons/${hackathonId}/teams`);
       set({ teams, loading: false });
-    } catch { set({ loading: false }); }
+    } catch {
+      set({ loading: false });
+    }
   },
 
   updateTeam: async (hackathonId, id, data) => {
@@ -105,7 +106,9 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
     return teams.filter((t) => {
       const matchStatus = statusFilter === 'ALL' || t.status === statusFilter;
       const q = search.toLowerCase();
-      const matchSearch = !q || t.name.toLowerCase().includes(q) ||
+      const matchSearch =
+        !q ||
+        t.name.toLowerCase().includes(q) ||
         t.participants.some((p) => p.name.toLowerCase().includes(q)) ||
         t.room?.toLowerCase().includes(q);
       return matchStatus && matchSearch;

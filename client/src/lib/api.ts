@@ -1,6 +1,6 @@
 import { useAuthStore } from '@/store/authStore';
 
-const BASE = '/api';
+const BASE = import.meta.env.VITE_API_URL || '/api';
 
 class ApiError extends Error {
   constructor(public status: number, message: string) {
@@ -34,8 +34,10 @@ async function request<T>(path: string, opts: RequestInit = {}): Promise<T> {
 
 export const api = {
   get: <T>(p: string) => request<T>(p),
-  post: <T>(p: string, d?: unknown) => request<T>(p, { method: 'POST', body: d ? JSON.stringify(d) : undefined }),
-  patch: <T>(p: string, d?: unknown) => request<T>(p, { method: 'PATCH', body: d ? JSON.stringify(d) : undefined }),
+  post: <T>(p: string, d?: unknown) =>
+    request<T>(p, { method: 'POST', body: d ? JSON.stringify(d) : undefined }),
+  patch: <T>(p: string, d?: unknown) =>
+    request<T>(p, { method: 'PATCH', body: d ? JSON.stringify(d) : undefined }),
   delete: <T>(p: string) => request<T>(p, { method: 'DELETE' }),
 };
 

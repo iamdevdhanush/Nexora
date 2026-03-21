@@ -1,7 +1,6 @@
 import { create } from 'zustand';
 import { persist } from 'zustand/middleware';
 
-// ─── Auth Store ───────────────────────────────────────────────────────────────
 interface AuthUser {
   id: string;
   name: string;
