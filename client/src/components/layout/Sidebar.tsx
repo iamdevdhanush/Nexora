@@ -1,5 +1,5 @@
 import { NavLink, useNavigate } from 'react-router-dom';
-import { LayoutDashboard, Users, UserCheck, MessageSquare, Award, Zap, ChevronDown, Plus, LogOut, Loader2, Check } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, MessageSquare, Award, Zap, ChevronDown, Plus, LogOut, Loader2, Check, Link2, Settings } from 'lucide-react';
 import { useAuthStore } from '@/store/authStore';
 import { useHackathonStore, Hackathon } from '@/store/hackathonStore';
 import { useUIStore } from '@/store/uiStore';
@@ -9,6 +9,7 @@ import { disconnectSocket } from '@/lib/socket';
 
 const NAV_ITEMS = [
   { to: '/', label: 'Dashboard', icon: LayoutDashboard, exact: true },
+  { to: '/hackathons', label: 'Hackathons', icon: Zap },
   { to: '/teams', label: 'Teams', icon: Users },
   { to: '/checkin', label: 'Check-in', icon: UserCheck },
   { to: '/messages', label: 'Messages', icon: MessageSquare },
@@ -18,7 +19,7 @@ const NAV_ITEMS = [
 export function Sidebar() {
   const { user, logout } = useAuthStore();
   const { hackathons, activeHackathon, setActiveHackathon, loading } = useHackathonStore();
-  const { setCreateHackathonOpen } = useUIStore();
+  const { setCreateHackathonOpen, setInviteOpen } = useUIStore();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'SUPER_ADMIN';
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -70,6 +71,15 @@ export function Sidebar() {
             {isAdmin && (
               <>
                 <div className="divider" />
+                {activeHackathon && (
+                  <button onClick={() => { setSwitcherOpen(false); setInviteOpen(true); }}
+                    className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors duration-100"
+                    style={{ fontSize: 13, color: 'var(--text-secondary)' }}
+                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
+                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                    <Link2 className="w-3.5 h-3.5" />Invite coordinators
+                  </button>
+                )}
                 <button onClick={() => { setSwitcherOpen(false); setCreateHackathonOpen(true); }}
                   className="w-full flex items-center gap-2 px-3 py-2.5 transition-colors duration-100"
                   style={{ fontSize: 13, color: 'var(--text-secondary)' }}
@@ -99,7 +109,7 @@ export function Sidebar() {
           </div>
           <div className="flex-1 min-w-0">
             <p className="font-semibold truncate" style={{ fontSize: 12.5, color: 'var(--text)', lineHeight: 1.3 }}>{user?.name || 'User'}</p>
-            <p className="truncate" style={{ fontSize: 11, color: 'var(--text-muted)' }}>{user?.role === 'SUPER_ADMIN' ? 'Admin' : 'Coordinator'}</p>
+            <p className="truncate" style={{ fontSize: 11, color: 'var(--text-muted)' }}>{user?.role === 'SUPER_ADMIN' ? 'Super Coordinator' : 'Coordinator'}</p>
           </div>
           <button onClick={handleLogout} className="w-6 h-6 rounded flex items-center justify-center transition-colors duration-100" style={{ color: 'var(--text-muted)' }}
             onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-muted)')}

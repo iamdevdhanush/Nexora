@@ -1,4 +1,4 @@
-import { Search, Plus, ChevronDown, Zap } from 'lucide-react';
+import { Search, Plus, ChevronDown, Zap, Link2 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
@@ -7,7 +7,7 @@ import { useState } from 'react';
 
 export function TopBar() {
   const { activeHackathon, hackathons, setActiveHackathon } = useHackathonStore();
-  const { setCommandOpen, setCreateHackathonOpen } = useUIStore();
+  const { setCommandOpen, setCreateHackathonOpen, setInviteOpen } = useUIStore();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'SUPER_ADMIN';
   const [switcherOpen, setSwitcherOpen] = useState(false);
@@ -15,7 +15,7 @@ export function TopBar() {
   return (
     <>
       <header className="sticky top-0 z-30 flex items-center justify-between px-4 pt-safe"
-        style={{ height: 52, background: 'rgba(255,255,255,0.9)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+        style={{ height: 52, background: 'rgba(255,255,255,0.92)', borderBottom: '1px solid var(--border)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
         <button onClick={() => setSwitcherOpen(true)} className="flex items-center gap-2 press min-w-0">
           <div className="w-6 h-6 rounded-md flex items-center justify-center flex-shrink-0" style={{ background: '#0A0A0A' }}>
             <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
@@ -32,9 +32,18 @@ export function TopBar() {
             <Search className="w-4 h-4" />
           </button>
           {isAdmin && (
-            <button onClick={() => setCreateHackathonOpen(true)} className="btn btn-primary btn-icon btn-sm ml-1">
-              <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
-            </button>
+            <>
+              {activeHackathon && (
+                <button onClick={() => setInviteOpen(true)} className="w-8 h-8 rounded-lg flex items-center justify-center transition-colors duration-100" style={{ color: 'var(--text-muted)' }}
+                  onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-muted)')}
+                  onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                  <Link2 className="w-4 h-4" />
+                </button>
+              )}
+              <button onClick={() => setCreateHackathonOpen(true)} className="btn btn-primary btn-icon btn-sm ml-1">
+                <Plus className="w-3.5 h-3.5" strokeWidth={2.5} />
+              </button>
+            </>
           )}
           <div className="w-7 h-7 rounded-md flex items-center justify-center text-white font-bold ml-1 flex-shrink-0" style={{ fontSize: 10, background: '#0A0A0A' }}>
             {initials(user?.name || 'U')}

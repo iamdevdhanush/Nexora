@@ -1,6 +1,6 @@
-# ⚡ Nexora — Premium Hackathon Operations Platform
+# ⚡ Nexora — Production Hackathon Management SaaS
 
-A production-ready, mobile-first PWA for managing hackathons in real-time.
+A production-ready, full-stack SaaS for managing hackathons end-to-end.
 
 ---
 
@@ -8,32 +8,25 @@ A production-ready, mobile-first PWA for managing hackathons in real-time.
 
 ### Prerequisites
 - Node.js 18+
-- Docker (for PostgreSQL) or a local PostgreSQL instance
+- Docker (for PostgreSQL)
 
-### 1. Clone and configure
-
+### 1. Configure environment
 ```bash
 cp server/.env.example server/.env
-# Edit DATABASE_URL and JWT_SECRET
+# Edit DATABASE_URL and JWT_SECRET in server/.env
 ```
 
 ### 2. Start PostgreSQL
-
 ```bash
 docker compose up -d
 ```
 
 ### 3. Install, migrate, seed
-
 ```bash
 bash setup.sh
-# or manually:
-npm run install:all
-npm run db:setup
 ```
 
 ### 4. Run
-
 ```bash
 npm run dev
 ```
@@ -45,13 +38,11 @@ npm run dev
 
 ## 🔐 Login
 
-OTP-based authentication. In **development** mode, the OTP is always `123456` and shown in the server console + in a dev banner on the login screen.
-
-**Seeded accounts:**
+OTP-based authentication. In **development** mode, OTP is always `123456`.
 
 | Role | Email |
 |---|---|
-| Super Admin | `admin@nexora.dev` |
+| Super Coordinator | `admin@nexora.dev` |
 | Coordinator | `coord1@nexora.dev` |
 | Coordinator | `coord2@nexora.dev` |
 
@@ -64,22 +55,10 @@ OTP-based authentication. In **development** mode, the OTP is always `123456` an
 | Frontend | React 18 + Vite + TypeScript |
 | Styling | Tailwind CSS + CSS Variables |
 | State | Zustand |
-| PWA | vite-plugin-pwa + Workbox |
 | Backend | Node.js + Express + TypeScript |
 | Database | PostgreSQL + Prisma ORM |
 | Real-time | Socket.io |
 | Auth | OTP (email/phone) + JWT |
-
----
-
-## 🔑 Key Bug Fixes (vs original)
-
-1. **`trust proxy` added** — prevents rate limiter crash behind Render/ngrok
-2. **`_count` fixed** — hackathon team counts now show correctly everywhere
-3. **Real OTP flow** — OTPs stored in DB, expire in 10 min, invalidate on re-request
-4. **Root Prisma schema removed** — only `server/prisma/` should exist (PostgreSQL)
-5. **Crash-safe routes** — invalid query params no longer crash the server
-6. **Onboarding step** — new users are prompted for their name after first login
 
 ---
 
@@ -90,34 +69,98 @@ nexora/
 ├── client/                 # React PWA frontend
 │   └── src/
 │       ├── App.tsx
-│       ├── pages/          # Auth, Dashboard, Teams, CheckIn, Messages, Certificates, Hackathons, CoordinatorView
+│       ├── pages/
+│       │   ├── AuthPage.tsx
+│       │   ├── DashboardPage.tsx
+│       │   ├── TeamsPage.tsx
+│       │   ├── CheckInPage.tsx
+│       │   ├── MessagesPage.tsx
+│       │   ├── CertificatesPage.tsx
+│       │   ├── HackathonsPage.tsx
+│       │   ├── HackathonDashboardPage.tsx  ← NEW
+│       │   ├── CoordinatorView.tsx
+│       │   └── JoinPage.tsx                ← NEW (invite flow)
 │       ├── components/
 │       │   ├── layout/     # AppShell, Sidebar, TopBar
-│       │   ├── teams/      # TeamDrawer, SheetsSheet
+│       │   ├── teams/      # TeamDrawer, SheetsSheet, CreateTeamSheet
 │       │   ├── broadcast/  # BroadcastSheet
-│       │   ├── hackathons/ # CreateHackathonSheet
-│       │   ├── command-palette/ # CommandPalette (⌘K)
+│       │   ├── hackathons/ # CreateHackathonSheet, InviteSheet
+│       │   ├── command-palette/
 │       │   └── ui/         # Toasts
-│       ├── store/          # Zustand: auth, hackathon, teams, ui
+│       ├── store/          # authStore, hackathonStore, teamsStore, uiStore
 │       └── lib/            # api, socket, utils
 │
-├── server/                 # Express backend
+├── server/
 │   ├── prisma/
-│   │   ├── schema.prisma   # PostgreSQL schema
-│   │   └── seed.ts         # 25 teams, 1 hackathon, 3 coordinators
+│   │   ├── schema.prisma   # Full PostgreSQL schema
+│   │   └── seed.ts
 │   └── src/
-│       ├── index.ts        # Entry + Socket.io + trust proxy
-│       ├── routes/         # auth, hackathons, teams, coordinators, messages, other
-│       ├── middleware/      # auth (JWT), errorHandler, rateLimiter
-│       ├── jobs/           # messageQueue (async broadcast)
-│       ├── lib/            # prisma, logger, socket
-│       └── services/       # metricsService
+│       ├── index.ts
+│       ├── routes/
+│       │   ├── auth.ts
+│       │   ├── hackathons.ts
+│       │   ├── teams.ts
+│       │   ├── coordinators.ts
+│       │   ├── messages.ts
+│       │   ├── invites.ts   ← NEW
+│       │   └── other.ts     (metrics, activity, sheets, certs, problems)
+│       ├── middleware/
+│       ├── jobs/
+│       ├── lib/
+│       └── services/
 │
-├── shared/types/           # Shared TypeScript types
+├── shared/types/
 ├── docker-compose.yml
 ├── setup.sh
 └── README.md
 ```
+
+---
+
+## ✨ Features
+
+### Authentication
+- OTP-based login (email or phone)
+- First-time signup with name onboarding
+- JWT tokens, 7-day expiry
+
+### Hackathon Management
+- Create hackathons with name, description, venue, dates, max teams
+- Two modes: **Predefined** (teams choose) or **On-spot** (coordinators assign) problem statements
+- Status lifecycle: Draft → Active → Ended
+- Full CRUD from the Hackathon Dashboard page
+
+### Invite System ✅ NEW
+- Generate unique invite links with UUID tokens
+- Configurable expiry (1, 3, 7, 14 days)
+- Optional approval requirement
+- Pre-written professional invitation message
+- `/join/:token` frontend flow — works with or without existing account
+
+### Team Management
+- Create, edit, delete teams
+- Assign rooms, coordinators, problem statements
+- Check-in flow with undo support
+- QR code scanner compatible check-in station
+- Real-time updates via Socket.io
+
+### Messaging
+- Broadcast to all or selected teams
+- Channels: WhatsApp, SMS, Internal
+- Async delivery queue with retry support
+- Delivery status tracking per recipient
+
+### Certificates
+- Generate PARTICIPATION, WINNER, RUNNER_UP, SPECIAL certificates
+- Bulk generation for all teams
+- Status tracking: Pending → Generated → Sent
+
+### Activity Logs
+- All edits, check-ins, and changes tracked
+- Visible in Hackathon Dashboard → Activity tab
+
+### Command Palette (⌘K)
+- Quick navigate, check in teams, send broadcasts, create teams
 
 ---
 
@@ -152,17 +195,24 @@ All routes prefixed `/api`. Protected routes require `Authorization: Bearer <tok
 | POST | `/hackathons` | Create (admin) |
 | PATCH | `/hackathons/:id` | Update |
 | DELETE | `/hackathons/:id` | Delete |
+| POST | `/invites` | Generate invite link |
+| GET | `/invites/:token` | Preview invite |
+| POST | `/invites/:token/accept` | Accept invite |
 | GET | `/hackathons/:hid/teams` | List teams |
+| POST | `/hackathons/:hid/teams` | Create team |
+| PATCH | `/hackathons/:hid/teams/:id` | Update team |
+| DELETE | `/hackathons/:hid/teams/:id` | Delete team |
 | POST | `/hackathons/:hid/teams/:id/checkin` | Check in |
 | GET | `/hackathons/:hid/metrics` | Live metrics |
 | POST | `/hackathons/:hid/messages/broadcast` | Broadcast |
-| GET/POST | `/hackathons/:hid/certificates` | Certificates |
+| GET | `/hackathons/:hid/certificates` | List certs |
+| POST | `/hackathons/:hid/certificates/generate` | Generate certs |
+| GET | `/hackathons/:hid/activity` | Activity logs |
+| POST | `/hackathons/:hid/sheets/sync` | Sync from Google Sheets |
+
+---
 
 ## 🔴 WebSocket Events
-
-```js
-socket.emit('join:hackathon', hackathonId)
-```
 
 | Event | Description |
 |---|---|
@@ -170,3 +220,15 @@ socket.emit('join:hackathon', hackathonId)
 | `team:checkin` | Team checked in |
 | `metrics:updated` | Metrics recalculated |
 | `message:status` | Broadcast delivery update |
+
+---
+
+## 🔑 Key Bug Fixes
+
+1. **`trust proxy` added** — prevents rate limiter crash behind Render/ngrok
+2. **`_count` fixed** — team counts show correctly everywhere
+3. **Real OTP flow** — OTPs stored in DB, expire in 10 min
+4. **Root Prisma schema removed** — only `server/prisma/` (PostgreSQL)
+5. **Invite system** — secure UUID tokens with expiry and accept flow
+6. **Delete team** — with confirmation dialog
+7. **Problem statement mode** — PREDEFINED vs ON_SPOT per hackathon

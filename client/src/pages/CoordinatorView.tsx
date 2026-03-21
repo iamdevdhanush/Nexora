@@ -84,7 +84,7 @@ export function CoordinatorView() {
             <div className="grid grid-cols-3 gap-2">
               {team.status === 'REGISTERED' && (
                 <button onClick={() => handleCheckIn(team)} disabled={checking === team.id}
-                  className="flex flex-col items-center gap-1.5 py-3 rounded-lg transition-colors duration-100 disabled:opacity-50"
+                  className="flex flex-col items-center gap-1.5 py-3 rounded-lg disabled:opacity-50"
                   style={{ background: 'var(--success-bg)' }}>
                   {checking === team.id
                     ? <div className="spinner" style={{ width: 20, height: 20, borderTopColor: 'var(--success)' }} />
@@ -95,13 +95,13 @@ export function CoordinatorView() {
               {team.leaderPhone && (
                 <>
                   <a href={`tel:${team.leaderPhone}`}
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-lg transition-colors duration-100"
+                    className="flex flex-col items-center gap-1.5 py-3 rounded-lg"
                     style={{ background: 'var(--bg-muted)' }}>
                     <Phone className="w-5 h-5" style={{ color: 'var(--text-secondary)' }} />
                     <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--text-secondary)' }}>Call</span>
                   </a>
                   <a href={`https://wa.me/${team.leaderPhone.replace(/\D/g, '')}`} target="_blank" rel="noopener"
-                    className="flex flex-col items-center gap-1.5 py-3 rounded-lg transition-colors duration-100"
+                    className="flex flex-col items-center gap-1.5 py-3 rounded-lg"
                     style={{ background: 'rgba(37,211,102,0.1)' }}>
                     <MessageSquare className="w-5 h-5" style={{ color: '#128C3E' }} />
                     <span style={{ fontSize: 11, fontWeight: 600, color: '#128C3E' }}>WhatsApp</span>

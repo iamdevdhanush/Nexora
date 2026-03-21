@@ -10,6 +10,7 @@ export interface Hackathon {
   startDate: string;
   endDate: string;
   status: 'DRAFT' | 'ACTIVE' | 'ENDED';
+  mode: 'PREDEFINED' | 'ON_SPOT';
   maxTeams?: number;
   createdAt: string;
   _count?: { teams: number };
@@ -24,6 +25,7 @@ interface HackathonState {
   setActiveHackathon: (h: Hackathon) => void;
   createHackathon: (data: Partial<Hackathon>) => Promise<Hackathon>;
   updateHackathon: (id: string, data: Partial<Hackathon>) => Promise<void>;
+  deleteHackathon: (id: string) => Promise<void>;
 }
 
 export const useHackathonStore = create<HackathonState>()(
@@ -65,6 +67,14 @@ export const useHackathonStore = create<HackathonState>()(
         set((s) => ({
           hackathons: s.hackathons.map((x) => (x.id === id ? h : x)),
           activeHackathon: s.activeHackathon?.id === id ? h : s.activeHackathon,
+        }));
+      },
+
+      deleteHackathon: async (id) => {
+        await api.delete(`/hackathons/${id}`);
+        set((s) => ({
+          hackathons: s.hackathons.filter((h) => h.id !== id),
+          activeHackathon: s.activeHackathon?.id === id ? s.hackathons.find((h) => h.id !== id) || null : s.activeHackathon,
         }));
       },
     }),

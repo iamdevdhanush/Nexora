@@ -4,7 +4,6 @@ import { useUIStore } from '@/store/uiStore';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
 import { api } from '@/lib/api';
-import { cn } from '@/lib/utils';
 
 type Channel = 'WHATSAPP' | 'SMS' | 'INTERNAL';
 const CHANNELS: { value: Channel; label: string; icon: typeof Send; desc: string }[] = [
@@ -45,7 +44,7 @@ export function BroadcastSheet() {
       <div className="sheet animate-slide-up flex flex-col" style={{ maxHeight: '90vh' }}>
         <div className="sheet-handle" />
         <div className="flex items-center justify-between px-5 pb-4 border-b" style={{ borderColor: 'var(--border)' }}>
-          <div><h2 className="font-bold" style={{ fontSize: 16 }}>Broadcast</h2><p className="text-caption mt-0.5">Send a message to teams</p></div>
+          <div><h2 className="font-bold" style={{ fontSize: 16 }}>Broadcast message</h2><p className="text-caption mt-0.5">Send to teams</p></div>
           <button className="btn btn-ghost btn-icon btn-sm" onClick={close}><X className="w-4 h-4" /></button>
         </div>
         <div className="flex-1 overflow-y-auto px-5 py-4 space-y-5">
@@ -77,12 +76,10 @@ export function BroadcastSheet() {
             {recipientType === 'selected' && (
               <div className="mt-2 rounded-lg border overflow-hidden max-h-40 overflow-y-auto" style={{ borderColor: 'var(--border)' }}>
                 {teams.map((t) => (
-                  <label key={t.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b last:border-0 transition-colors duration-100" style={{ borderColor: 'var(--border)' }}
-                    onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-subtle)')}
-                    onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}>
+                  <label key={t.id} className="flex items-center gap-3 px-4 py-2.5 cursor-pointer border-b last:border-0 hover:bg-[var(--bg-subtle)]" style={{ borderColor: 'var(--border)' }}>
                     <input type="checkbox" checked={selectedIds.includes(t.id)}
                       onChange={() => setSelectedIds((p) => p.includes(t.id) ? p.filter((x) => x !== t.id) : [...p, t.id])}
-                      className="w-4 h-4 rounded accent-[#0A0A0A]" />
+                      className="w-4 h-4 rounded" style={{ accentColor: '#0A0A0A' }} />
                     <span style={{ fontSize: 14, fontWeight: 500 }}>{t.name}</span>
                   </label>
                 ))}

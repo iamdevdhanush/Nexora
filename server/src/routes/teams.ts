@@ -13,6 +13,7 @@ teamsRouter.use(authenticate);
 const teamInclude = {
   participants: true,
   coordinator: { include: { user: { select: { id: true, name: true } } } },
+  problemStatement: { select: { id: true, title: true } },
 };
 
 const mapTeam = (t: any) => ({
@@ -105,7 +106,7 @@ teamsRouter.get('/:id', async (req: AuthRequest, res) => {
 teamsRouter.patch('/:id', async (req: AuthRequest, res) => {
   const {
     status, room, tableNumber, notes, coordinatorId,
-    projectName, projectUrl, leaderPhone,
+    projectName, projectUrl, leaderPhone, problemStatementId,
   } = req.body;
   try {
     const team = await prisma.team.update({
@@ -119,6 +120,7 @@ teamsRouter.patch('/:id', async (req: AuthRequest, res) => {
         ...(projectName !== undefined && { projectName: projectName || null }),
         ...(projectUrl !== undefined && { projectUrl: projectUrl || null }),
         ...(leaderPhone !== undefined && { leaderPhone: leaderPhone || null }),
+        ...(problemStatementId !== undefined && { problemStatementId: problemStatementId || null }),
       },
       include: teamInclude,
     });
@@ -225,5 +227,15 @@ teamsRouter.post('/', async (req: AuthRequest, res) => {
     if (err.code === 'P2002')
       return res.status(409).json({ error: 'Team name already exists in this hackathon' });
     res.status(500).json({ error: 'Failed to create team' });
+  }
+});
+
+// DELETE team
+teamsRouter.delete('/:id', async (req: AuthRequest, res) => {
+  try {
+    await prisma.team.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete team' });
   }
 });

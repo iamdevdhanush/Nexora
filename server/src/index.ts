@@ -11,6 +11,7 @@ import { teamsRouter } from './routes/teams';
 import { coordinatorsRouter } from './routes/coordinators';
 import { messagesRouter } from './routes/messages';
 import { metricsRouter, activityRouter, sheetsRouter, certificatesRouter } from './routes/other';
+import { inviteRouter } from './routes/invites';
 
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter } from './middleware/rateLimiter';
@@ -54,6 +55,7 @@ app.use('/api/hackathons/:hackathonId/certificates', certificatesRouter);
 app.use('/api/hackathons/:hackathonId/metrics', metricsRouter);
 app.use('/api/hackathons/:hackathonId/activity', activityRouter);
 app.use('/api/hackathons/:hackathonId/sheets', sheetsRouter);
+app.use('/api/invites', inviteRouter);
 
 app.get('/health', (_, res) =>
   res.json({ status: 'ok', ts: new Date().toISOString() })

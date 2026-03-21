@@ -20,7 +20,7 @@ export function Toasts() {
             style={{ background: bg, color, boxShadow: '0 8px 16px rgba(0,0,0,0.15), 0 2px 4px rgba(0,0,0,0.1)' }}>
             {icon}
             <span className="flex-1 font-medium" style={{ fontSize: 13 }}>{t.message}</span>
-            <button onClick={() => dismissToast(t.id)} className="opacity-60 hover:opacity-100 transition-opacity duration-100">
+            <button onClick={() => dismissToast(t.id)} className="opacity-60 hover:opacity-100 transition-opacity">
               <X className="w-3.5 h-3.5" />
             </button>
           </div>

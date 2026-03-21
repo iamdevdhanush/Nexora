@@ -1,6 +1,6 @@
 import { Outlet, NavLink } from 'react-router-dom';
 import { useEffect } from 'react';
-import { LayoutDashboard, Users, UserCheck, MessageSquare, Award } from 'lucide-react';
+import { LayoutDashboard, Users, UserCheck, MessageSquare, Award, Zap } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
 import { useUIStore } from '@/store/uiStore';
@@ -9,6 +9,8 @@ import { CommandPalette } from '@/components/command-palette/CommandPalette';
 import { BroadcastSheet } from '@/components/broadcast/BroadcastSheet';
 import { SheetsSheet } from '@/components/teams/SheetsSheet';
 import { CreateHackathonSheet } from '@/components/hackathons/CreateHackathonSheet';
+import { CreateTeamSheet } from '@/components/teams/CreateTeamSheet';
+import { InviteSheet } from '@/components/hackathons/InviteSheet';
 import { Toasts } from '@/components/ui/Toasts';
 import { Sidebar } from './Sidebar';
 import { TopBar } from './TopBar';
@@ -24,7 +26,7 @@ const BOTTOM_NAV = [
 export function AppShell() {
   const { activeHackathon, fetchHackathons } = useHackathonStore();
   const { fetchTeams, upsertTeam } = useTeamsStore();
-  const { broadcastOpen, sheetsOpen, createHackathonOpen, commandOpen } = useUIStore();
+  const { broadcastOpen, sheetsOpen, createHackathonOpen, commandOpen, createTeamOpen, inviteOpen } = useUIStore();
 
   useEffect(() => { fetchHackathons(); }, []);
 
@@ -70,9 +72,9 @@ export function AppShell() {
         <TopBar />
         <main className="flex-1 overflow-auto pb-nav"><Outlet /></main>
         <nav className="fixed bottom-0 inset-x-0 z-30 flex items-center"
-          style={{ height: 'calc(52px + var(--safe-bottom))', paddingBottom: 'var(--safe-bottom)', background: 'rgba(255,255,255,0.9)', borderTop: '1px solid var(--border)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
+          style={{ height: 'calc(52px + var(--safe-bottom))', paddingBottom: 'var(--safe-bottom)', background: 'rgba(255,255,255,0.92)', borderTop: '1px solid var(--border)', backdropFilter: 'blur(12px)', WebkitBackdropFilter: 'blur(12px)' }}>
           {BOTTOM_NAV.map(({ to, label, icon: Icon, exact }) => (
-            <NavLink key={to} to={to} end={exact} className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1 transition-colors duration-100">
+            <NavLink key={to} to={to} end={exact} className="flex-1 flex flex-col items-center justify-center gap-0.5 py-1">
               {({ isActive }) => (
                 <>
                   <div className="w-9 h-6 flex items-center justify-center rounded-lg transition-colors duration-100" style={{ background: isActive ? 'var(--bg-muted)' : 'transparent' }}>
@@ -90,6 +92,8 @@ export function AppShell() {
       {broadcastOpen && <BroadcastSheet />}
       {sheetsOpen && <SheetsSheet />}
       {createHackathonOpen && <CreateHackathonSheet />}
+      {createTeamOpen && <CreateTeamSheet />}
+      {inviteOpen && <InviteSheet />}
       <Toasts />
     </div>
   );

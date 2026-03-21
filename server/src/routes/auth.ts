@@ -45,9 +45,6 @@ authRouter.post('/otp/request', authLimiter, async (req, res) => {
 
     logger.info(`[OTP] ${contact} → ${IS_DEV ? code : '******'}`);
 
-    // Production: send via email/SMS here
-    // if (!IS_DEV) await sendOtpEmail(contact, code);
-
     return res.json({
       message: 'OTP sent',
       ...(IS_DEV && { devOtp: code }),

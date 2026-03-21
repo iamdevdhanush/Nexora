@@ -54,7 +54,6 @@ const sendToTeam = async (
     });
     if (!recipient) return;
 
-    // Mock: 90% success if team has a phone
     const success = !!team.leaderPhone && Math.random() > 0.1;
 
     await prisma.messageRecipient.update({
@@ -66,7 +65,6 @@ const sendToTeam = async (
       },
     });
 
-    // Check if whole message is done
     const all = await prisma.messageRecipient.findMany({ where: { messageId } });
     const allDone = all.every((r) => r.status === 'SENT' || r.status === 'FAILED');
     if (allDone) {

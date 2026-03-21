@@ -52,7 +52,6 @@ sheetsRouter.post('/sync', requireAdmin, async (req: AuthRequest, res) => {
       const data = (await r.json()) as any;
       rows = data.values || [];
     } else {
-      // Mock data when no API key
       rows = [
         ['Timestamp', 'Team Name', 'Member 1', 'Member 2', 'Member 3', 'Leader Phone'],
         ['2024-01-01', 'AlphaBuilders', 'John Doe', 'Jane Smith', 'Bob Lee', '+919000000001'],
@@ -73,9 +72,7 @@ sheetsRouter.post('/sync', requireAdmin, async (req: AuthRequest, res) => {
       )
       .filter((i) => i !== -1);
 
-    let created = 0,
-      updated = 0,
-      skipped = 0;
+    let created = 0, updated = 0, skipped = 0;
 
     for (const row of rows.slice(1)) {
       const teamName = row[teamNameIdx]?.trim();
@@ -190,5 +187,57 @@ certificatesRouter.patch('/:id', requireAdmin, async (req, res) => {
     res.json(cert);
   } catch {
     res.status(500).json({ error: 'Failed to update certificate' });
+  }
+});
+
+// ─── Problem Statements ───────────────────────────────────────────────────────
+export const problemsRouter = Router({ mergeParams: true });
+problemsRouter.use(authenticate);
+
+problemsRouter.get('/', async (req, res) => {
+  try {
+    const problems = await prisma.problemStatement.findMany({
+      where: { hackathonId: req.params.hackathonId },
+      include: { _count: { select: { teams: true } } },
+      orderBy: { createdAt: 'asc' },
+    });
+    res.json(problems);
+  } catch {
+    res.status(500).json({ error: 'Failed to fetch problem statements' });
+  }
+});
+
+problemsRouter.post('/', requireAdmin, async (req: AuthRequest, res) => {
+  const { title, description } = req.body;
+  if (!title || !description)
+    return res.status(400).json({ error: 'title and description required' });
+  try {
+    const problem = await prisma.problemStatement.create({
+      data: { title, description, hackathonId: req.params.hackathonId },
+    });
+    res.status(201).json(problem);
+  } catch {
+    res.status(500).json({ error: 'Failed to create problem statement' });
+  }
+});
+
+problemsRouter.patch('/:id', requireAdmin, async (req, res) => {
+  try {
+    const problem = await prisma.problemStatement.update({
+      where: { id: req.params.id },
+      data: req.body,
+    });
+    res.json(problem);
+  } catch {
+    res.status(500).json({ error: 'Failed to update problem statement' });
+  }
+});
+
+problemsRouter.delete('/:id', requireAdmin, async (req, res) => {
+  try {
+    await prisma.problemStatement.delete({ where: { id: req.params.id } });
+    res.json({ success: true });
+  } catch {
+    res.status(500).json({ error: 'Failed to delete problem statement' });
   }
 });

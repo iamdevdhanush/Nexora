@@ -1,5 +1,5 @@
 import { useState, useEffect, useRef } from 'react';
-import { Search, Users, Send, UserCheck, X, ArrowRight } from 'lucide-react';
+import { Search, Users, Send, UserCheck, X, ArrowRight, Plus, Link2 } from 'lucide-react';
 import { useUIStore } from '@/store/uiStore';
 import { useTeamsStore, Team } from '@/store/teamsStore';
 import { useHackathonStore } from '@/store/hackathonStore';
@@ -10,7 +10,7 @@ import { cn } from '@/lib/utils';
 interface Action { id: string; label: string; sub?: string; icon: React.ReactNode; run: () => void; category: string; }
 
 export function CommandPalette() {
-  const { setCommandOpen, setBroadcastOpen, toast } = useUIStore();
+  const { setCommandOpen, setBroadcastOpen, setCreateTeamOpen, setInviteOpen, toast } = useUIStore();
   const { teams, setSelectedTeam, checkIn } = useTeamsStore();
   const { activeHackathon } = useHackathonStore();
   const { user } = useAuthStore();
@@ -26,7 +26,11 @@ export function CommandPalette() {
   const staticActions: Action[] = [
     { id: 'teams', label: 'Go to Teams', icon: <Users className="w-4 h-4" />, category: 'Navigate', run: () => { navigate('/teams'); close(); } },
     { id: 'checkin', label: 'Check-in station', icon: <UserCheck className="w-4 h-4" />, category: 'Navigate', run: () => { navigate('/checkin'); close(); } },
-    ...(isAdmin ? [{ id: 'broadcast', label: 'Send broadcast', sub: 'Message all teams', icon: <Send className="w-4 h-4" />, category: 'Actions', run: () => { setBroadcastOpen(true); close(); } }] : []),
+    ...(isAdmin ? [
+      { id: 'broadcast', label: 'Send broadcast', sub: 'Message all teams', icon: <Send className="w-4 h-4" />, category: 'Actions', run: () => { setBroadcastOpen(true); close(); } },
+      { id: 'create-team', label: 'Create team', icon: <Plus className="w-4 h-4" />, category: 'Actions', run: () => { setCreateTeamOpen(true); close(); } },
+      { id: 'invite', label: 'Invite coordinators', sub: 'Generate invite link', icon: <Link2 className="w-4 h-4" />, category: 'Actions', run: () => { setInviteOpen(true); close(); } },
+    ] : []),
   ];
 
   const teamActions: Action[] = teams

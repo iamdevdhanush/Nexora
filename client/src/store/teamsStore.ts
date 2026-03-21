@@ -26,6 +26,7 @@ export interface Team {
   submissionTime?: string;
   coordinatorId?: string;
   coordinator?: { id: string; name: string } | null;
+  problemStatement?: { id: string; title: string } | null;
   participants: Participant[];
   createdAt: string;
   updatedAt: string;
@@ -38,7 +39,9 @@ interface TeamsState {
   statusFilter: TeamStatus | 'ALL';
   selectedTeam: Team | null;
   fetchTeams: (hackathonId: string) => Promise<void>;
+  createTeam: (hackathonId: string, data: Partial<Team>) => Promise<Team>;
   updateTeam: (hackathonId: string, id: string, data: Partial<Team>) => Promise<Team>;
+  deleteTeam: (hackathonId: string, id: string) => Promise<void>;
   checkIn: (hackathonId: string, id: string) => Promise<Team>;
   undoCheckIn: (hackathonId: string, id: string) => Promise<Team>;
   upsertTeam: (team: Team) => void;
@@ -65,11 +68,23 @@ export const useTeamsStore = create<TeamsState>((set, get) => ({
     }
   },
 
+  createTeam: async (hackathonId, data) => {
+    const team = await api.post<Team>(`/hackathons/${hackathonId}/teams`, data);
+    get().upsertTeam(team);
+    return team;
+  },
+
   updateTeam: async (hackathonId, id, data) => {
     const team = await api.patch<Team>(`/hackathons/${hackathonId}/teams/${id}`, data);
     get().upsertTeam(team);
     if (get().selectedTeam?.id === id) set({ selectedTeam: team });
     return team;
+  },
+
+  deleteTeam: async (hackathonId, id) => {
+    await api.delete(`/hackathons/${hackathonId}/teams/${id}`);
+    set((s) => ({ teams: s.teams.filter((t) => t.id !== id) }));
+    if (get().selectedTeam?.id === id) set({ selectedTeam: null });
   },
 
   checkIn: async (hackathonId, id) => {

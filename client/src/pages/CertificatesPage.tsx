@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Award, CheckCircle2, Clock, XCircle } from 'lucide-react';
+import { Award, CheckCircle2, Clock, XCircle, Upload } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';
@@ -17,6 +17,13 @@ const STATUS_ICON: Record<string, React.ReactNode> = {
   FAILED: <XCircle className="w-4 h-4" style={{ color: 'var(--danger)' }} />,
 };
 
+const TYPE_COLORS: Record<string, string> = {
+  PARTICIPATION: 'text-[var(--text-muted)] bg-[var(--bg-muted)]',
+  WINNER: 'text-[var(--warning)] bg-[var(--warning-bg)]',
+  RUNNER_UP: 'text-[var(--blue)] bg-[var(--blue-bg)]',
+  SPECIAL: 'text-[var(--accent)] bg-[var(--accent-light)]',
+};
+
 export function CertificatesPage() {
   const { activeHackathon } = useHackathonStore();
   const { user } = useAuthStore();
@@ -25,6 +32,7 @@ export function CertificatesPage() {
   const [certs, setCerts] = useState<Cert[]>([]);
   const [loading, setLoading] = useState(true);
   const [generating, setGenerating] = useState(false);
+  const [certType, setCertType] = useState<'PARTICIPATION' | 'WINNER' | 'RUNNER_UP' | 'SPECIAL'>('PARTICIPATION');
 
   const load = async () => {
     if (!activeHackathon) return;
@@ -39,7 +47,7 @@ export function CertificatesPage() {
     if (!activeHackathon) return;
     setGenerating(true);
     try {
-      const r = await api.post<{ created: number }>(`/hackathons/${activeHackathon.id}/certificates/generate`, { type: 'PARTICIPATION' });
+      const r = await api.post<{ created: number }>(`/hackathons/${activeHackathon.id}/certificates/generate`, { type: certType });
       toast(`${r.created} certificates queued`, 'success');
       load();
     } catch (e: any) { toast(e.message, 'error'); }
@@ -50,6 +58,7 @@ export function CertificatesPage() {
     total: certs.length,
     sent: certs.filter((c) => c.status === 'SENT').length,
     pending: certs.filter((c) => c.status === 'PENDING').length,
+    generated: certs.filter((c) => c.status === 'GENERATED').length,
   };
 
   return (
@@ -64,16 +73,32 @@ export function CertificatesPage() {
         )}
       </div>
 
+      {isAdmin && (
+        <div className="card p-4 mb-5">
+          <p className="text-label mb-3">Certificate type to generate</p>
+          <div className="grid grid-cols-2 gap-2 sm:grid-cols-4">
+            {(['PARTICIPATION', 'WINNER', 'RUNNER_UP', 'SPECIAL'] as const).map((t) => (
+              <button key={t} onClick={() => setCertType(t)}
+                className="py-2 px-3 rounded-lg font-semibold text-xs transition-all duration-150"
+                style={{ background: certType === t ? '#0A0A0A' : 'var(--bg-muted)', color: certType === t ? 'white' : 'var(--text-secondary)' }}>
+                {t.replace('_', ' ')}
+              </button>
+            ))}
+          </div>
+        </div>
+      )}
+
       {stats.total > 0 && (
-        <div className="grid grid-cols-3 gap-3 mb-5">
+        <div className="grid grid-cols-4 gap-3 mb-5">
           {[
-            { label: 'Total', value: stats.total },
+            { label: 'Total', value: stats.total, color: 'var(--text)' },
             { label: 'Sent', value: stats.sent, color: 'var(--success)' },
+            { label: 'Generated', value: stats.generated, color: 'var(--blue)' },
             { label: 'Pending', value: stats.pending, color: 'var(--warning)' },
           ].map((s) => (
-            <div key={s.label} className="metric-card text-center">
-              <p className="font-bold" style={{ fontSize: 24, color: (s as any).color || 'var(--text)' }}>{s.value}</p>
-              <p className="text-caption mt-1">{s.label}</p>
+            <div key={s.label} className="metric-card text-center p-3">
+              <p className="font-bold" style={{ fontSize: 20, color: s.color }}>{s.value}</p>
+              <p className="text-caption mt-0.5">{s.label}</p>
             </div>
           ))}
         </div>
@@ -98,7 +123,7 @@ export function CertificatesPage() {
           <p className="text-caption mt-1">Generate participation certificates for all teams</p>
           {isAdmin && (
             <button className="btn btn-primary btn-sm mt-4" onClick={generate} disabled={generating}>
-              <Award className="w-3.5 h-3.5" /> Generate now
+              <Award className="w-3.5 h-3.5" />Generate now
             </button>
           )}
         </div>
@@ -111,7 +136,7 @@ export function CertificatesPage() {
                 <p className="font-medium truncate" style={{ fontSize: 14 }}>{c.participantName}</p>
                 <p className="text-caption truncate">{c.team?.name} · {c.email}</p>
               </div>
-              <span className="badge flex-shrink-0" style={{ background: 'var(--bg-muted)', color: 'var(--text-muted)' }}>{c.type}</span>
+              <span className={`badge flex-shrink-0 ${TYPE_COLORS[c.type] || ''}`}>{c.type.replace('_', ' ')}</span>
             </div>
           ))}
         </div>

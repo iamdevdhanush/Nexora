@@ -1,4 +1,4 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
 import { ArrowRight, Shield, Zap, ChevronLeft, User } from 'lucide-react';
 import { api } from '@/lib/api';
@@ -19,32 +19,20 @@ export function AuthPage() {
 
   const requestOtp = async () => {
     if (!contact.trim()) return;
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
-      const res = await api.post<{ message: string; devOtp?: string }>(
-        '/auth/otp/request',
-        { contact: contact.trim() }
-      );
+      const res = await api.post<{ message: string; devOtp?: string }>('/auth/otp/request', { contact: contact.trim() });
       if (res.devOtp) setDevOtp(res.devOtp);
       setStep('otp');
-    } catch (e: any) {
-      setError(e.message);
-    } finally {
-      setLoading(false);
-    }
+    } catch (e: any) { setError(e.message); }
+    finally { setLoading(false); }
   };
 
   const verifyOtp = async () => {
     if (otp.length !== 6) return;
-    setLoading(true);
-    setError('');
+    setLoading(true); setError('');
     try {
-      const res = await api.post<{ token: string; user: any }>(
-        '/auth/otp/verify',
-        { contact: contact.trim(), code: otp }
-      );
-      // If user has no real name yet, show onboarding
+      const res = await api.post<{ token: string; user: any }>('/auth/otp/verify', { contact: contact.trim(), code: otp });
       const generatedName = contact.includes('@') ? contact.split('@')[0] : 'User';
       if (res.user.name === generatedName || res.user.name === 'User') {
         setAuth(res.user, res.token);
@@ -52,12 +40,11 @@ export function AuthPage() {
         return;
       }
       setAuth(res.user, res.token);
-      navigate('/', { replace: true });
-    } catch {
-      setError('Invalid code. Please try again.');
-    } finally {
-      setLoading(false);
-    }
+      const pending = sessionStorage.getItem('pendingInvite');
+      if (pending) { sessionStorage.removeItem('pendingInvite'); navigate(`/join/${pending}`, { replace: true }); }
+      else navigate('/', { replace: true });
+    } catch { setError('Invalid code. Please try again.'); }
+    finally { setLoading(false); }
   };
 
   const completeOnboarding = async () => {
@@ -68,24 +55,15 @@ export function AuthPage() {
       const user = await api.get<any>('/auth/me');
       const token = useAuthStore.getState().token!;
       setAuth(user, token);
-      navigate('/', { replace: true });
-    } catch {
-      navigate('/', { replace: true });
-    } finally {
-      setLoading(false);
-    }
+      const pending = sessionStorage.getItem('pendingInvite');
+      if (pending) { sessionStorage.removeItem('pendingInvite'); navigate(`/join/${pending}`, { replace: true }); }
+      else navigate('/', { replace: true });
+    } catch { navigate('/', { replace: true }); }
+    finally { setLoading(false); }
   };
 
-  const inputStyle = {
-    height: 48, fontSize: 15,
-    background: 'rgba(255,255,255,0.07)',
-    border: '1px solid rgba(255,255,255,0.1)',
-  };
-
-  const btnStyle = {
-    height: 48, fontSize: 15,
-    background: 'white', color: '#0A0A0A',
-  };
+  const inputStyle = { height: 48, fontSize: 15, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' };
+  const btnStyle = { height: 48, fontSize: 15, background: 'white', color: '#0A0A0A' };
 
   return (
     <div className="min-h-screen bg-[#0A0A0A] flex flex-col relative overflow-hidden">
@@ -101,7 +79,7 @@ export function AuthPage() {
       <div className="relative z-10 flex-1 flex flex-col justify-end px-6 pb-12 max-w-sm mx-auto w-full">
         <div className="mb-8">
           <h1 className="text-white font-bold tracking-tight mb-2" style={{ fontSize: 30, lineHeight: 1.15 }}>
-            {step === 'contact' && <><br className="hidden" />Sign in to<br />your workspace</>}
+            {step === 'contact' && <>Sign in to<br />your workspace</>}
             {step === 'otp' && <>Verify your<br />identity</>}
             {step === 'onboarding' && <>One last<br />thing</>}
           </h1>
@@ -121,18 +99,15 @@ export function AuthPage() {
 
           {step === 'contact' && (
             <>
-              <input
-                type="text" inputMode="email" autoFocus
-                value={contact} onChange={(e) => setContact(e.target.value)}
+              <input type="text" inputMode="email" autoFocus value={contact} onChange={(e) => setContact(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && requestOtp()}
                 placeholder="email or phone number"
-                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none transition-all duration-150"
+                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none transition-all"
                 style={inputStyle}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-              />
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
               <button onClick={requestOtp} disabled={loading || !contact.trim()}
-                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 press"
+                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg press"
                 style={{ ...btnStyle, opacity: loading || !contact.trim() ? 0.5 : 1 }}>
                 {loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
               </button>
@@ -153,18 +128,16 @@ export function AuthPage() {
                   <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>tap to fill</span>
                 </div>
               )}
-              <input
-                type="number" inputMode="numeric" autoFocus maxLength={6}
+              <input type="number" inputMode="numeric" autoFocus maxLength={6}
                 value={otp} onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                 onKeyDown={(e) => e.key === 'Enter' && otp.length === 6 && verifyOtp()}
                 placeholder="000000"
-                className="w-full text-center font-mono font-bold text-white placeholder:text-white/20 outline-none rounded-lg transition-all duration-150"
+                className="w-full text-center font-mono font-bold text-white placeholder:text-white/20 outline-none rounded-lg"
                 style={{ ...inputStyle, height: 56, fontSize: 28, letterSpacing: '0.25em' }}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-              />
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
               <button onClick={verifyOtp} disabled={loading || otp.length !== 6}
-                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 press"
+                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg press"
                 style={{ ...btnStyle, opacity: loading || otp.length !== 6 ? 0.5 : 1 }}>
                 {loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <>Verify <ArrowRight className="w-4 h-4" /></>}
               </button>
@@ -187,25 +160,21 @@ export function AuthPage() {
                   <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{contact}</p>
                 </div>
               </div>
-              <input
-                type="text" autoFocus value={name}
-                onChange={(e) => setName(e.target.value)}
+              <input type="text" autoFocus value={name} onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && completeOnboarding()}
                 placeholder="Your full name"
-                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none transition-all duration-150"
+                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none"
                 style={inputStyle}
                 onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')}
-              />
+                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
               <button onClick={completeOnboarding} disabled={loading || !name.trim()}
-                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg transition-all duration-150 press"
+                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg press"
                 style={{ ...btnStyle, opacity: loading || !name.trim() ? 0.5 : 1 }}>
                 {loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <>Get started <ArrowRight className="w-4 h-4" /></>}
               </button>
             </>
           )}
         </div>
-
         <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 24, lineHeight: 1.6 }}>
           By continuing, you agree to our terms of service and privacy policy.
         </p>

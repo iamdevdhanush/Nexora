@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Users, UserCheck, Send, Table2, Zap, Clock } from 'lucide-react';
+import { ArrowUpRight, Users, UserCheck, Send, Table2, Zap, Clock, Link2 } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
@@ -7,7 +7,7 @@ import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { getSocket } from '@/lib/socket';
 import { api } from '@/lib/api';
-import { cn, formatDate, formatDateTime, pluralize } from '@/lib/utils';
+import { cn, formatDate, pluralize } from '@/lib/utils';
 
 interface Metrics {
   totalTeams: number; checkedIn: number; checkedInPercent: number;
@@ -18,7 +18,7 @@ interface Metrics {
 export function DashboardPage() {
   const { activeHackathon } = useHackathonStore();
   const { teams } = useTeamsStore();
-  const { setBroadcastOpen, setSheetsOpen } = useUIStore();
+  const { setBroadcastOpen, setSheetsOpen, setCreateHackathonOpen, setInviteOpen } = useUIStore();
   const { user } = useAuthStore();
   const navigate = useNavigate();
   const isAdmin = user?.role === 'SUPER_ADMIN';
@@ -48,8 +48,8 @@ export function DashboardPage() {
         <h2 className="font-semibold mb-1" style={{ fontSize: 16 }}>No hackathon selected</h2>
         <p className="text-caption text-center mb-6">Create your first event to get started</p>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={() => useUIStore.getState().setCreateHackathonOpen(true)}>
-            Create hackathon
+          <button className="btn btn-primary" onClick={() => setCreateHackathonOpen(true)}>
+            <Zap className="w-4 h-4" />Create hackathon
           </button>
         )}
       </div>
@@ -61,7 +61,7 @@ export function DashboardPage() {
       <div className="flex items-start justify-between mb-6">
         <div>
           <h1 className="text-heading">{activeHackathon.name}</h1>
-          <p className="text-caption mt-1">{formatDate(activeHackathon.startDate)} · {activeHackathon.venue || 'Online'}</p>
+          <p className="text-caption mt-1">{formatDate(activeHackathon.startDate)} → {formatDate(activeHackathon.endDate)} · {activeHackathon.venue || 'Online'}</p>
         </div>
         <span className={cn('badge mt-1',
           activeHackathon.status === 'ACTIVE' ? 'badge-checked_in' :
@@ -73,7 +73,7 @@ export function DashboardPage() {
       {metricsLoading ? (
         <div className="card p-5 mb-5">
           <div className="skeleton h-4 w-32 mb-4 rounded" />
-          <div className="progress-bar mb-4"><div className="progress-fill" style={{ width: '0%' }} /></div>
+          <div className="progress-bar mb-4" />
           <div className="grid grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <div key={i} className="skeleton h-8 rounded" />)}</div>
         </div>
       ) : metrics ? (
@@ -124,12 +124,12 @@ export function DashboardPage() {
               <p className="font-semibold" style={{ fontSize: 14 }}>Broadcast</p>
               <p className="text-caption mt-0.5">Message all teams</p>
             </button>
-            <button onClick={() => setSheetsOpen(true)} className="card-hover p-4 text-left">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: 'var(--success-bg)' }}>
-                <Table2 className="w-4 h-4" style={{ color: 'var(--success)' }} />
+            <button onClick={() => setInviteOpen(true)} className="card-hover p-4 text-left">
+              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: 'var(--accent-light)' }}>
+                <Link2 className="w-4 h-4" style={{ color: 'var(--accent)' }} />
               </div>
-              <p className="font-semibold" style={{ fontSize: 14 }}>Import teams</p>
-              <p className="text-caption mt-0.5">Sync from Sheets</p>
+              <p className="font-semibold" style={{ fontSize: 14 }}>Invite coordinators</p>
+              <p className="text-caption mt-0.5">Share invite link</p>
             </button>
           </>
         )}

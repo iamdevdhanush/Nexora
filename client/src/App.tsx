@@ -9,6 +9,8 @@ import { MessagesPage } from '@/pages/MessagesPage';
 import { CertificatesPage } from '@/pages/CertificatesPage';
 import { HackathonsPage } from '@/pages/HackathonsPage';
 import { CoordinatorView } from '@/pages/CoordinatorView';
+import { JoinPage } from '@/pages/JoinPage';
+import { HackathonDashboardPage } from '@/pages/HackathonDashboardPage';
 
 function Guard({ children }: { children: React.ReactNode }) {
   const auth = useAuthStore((s) => s.isAuthenticated);
@@ -20,6 +22,7 @@ export default function App() {
     <BrowserRouter>
       <Routes>
         <Route path="/auth" element={<AuthPage />} />
+        <Route path="/join/:token" element={<JoinPage />} />
         <Route
           path="/coordinator"
           element={
@@ -38,6 +41,7 @@ export default function App() {
         >
           <Route index element={<DashboardPage />} />
           <Route path="hackathons" element={<HackathonsPage />} />
+          <Route path="hackathons/:id" element={<HackathonDashboardPage />} />
           <Route path="teams" element={<TeamsPage />} />
           <Route path="checkin" element={<CheckInPage />} />
           <Route path="messages" element={<MessagesPage />} />

@@ -17,6 +17,7 @@
     --text-disabled: #A3A3A3;
     --accent: #7C3AED;
     --accent-hover: #6D28D9;
+    --accent-light: rgba(124,58,237,0.08);
     --success: #16A34A;
     --success-bg: #F0FDF4;
     --warning: #D97706;
@@ -57,7 +58,8 @@
 
 @layer components {
   .ambient-bg {
-    background: radial-gradient(ellipse at 80% 0%, rgba(124,58,237,0.04) 0%, transparent 60%), var(--bg);
+    background: radial-gradient(ellipse at 80% 0%, rgba(124,58,237,0.06) 0%, transparent 60%), var(--bg);
+    min-height: 100vh;
   }
 
   .text-display { font-size: 32px; font-weight: 700; letter-spacing: -0.02em; line-height: 1.15; }
@@ -84,9 +86,11 @@
   .btn-danger:hover:not(:disabled) { background: #fee2e2; }
   .btn-accent { @apply btn; background: var(--accent); color: white; }
   .btn-accent:hover:not(:disabled) { background: var(--accent-hover); }
+  .btn-outline { @apply btn; background: transparent; color: var(--text); border: 1px solid var(--border); }
+  .btn-outline:hover:not(:disabled) { background: var(--bg-muted); }
 
   .btn-sm { height: 30px; padding: 0 10px; font-size: 13px; }
-  .btn-lg { height: 42px; padding: 0 20px; font-size: 15px; }
+  .btn-lg { height: 44px; padding: 0 22px; font-size: 15px; }
   .btn-icon { width: 36px; padding: 0; }
   .btn-icon.btn-sm { width: 30px; }
 
@@ -99,10 +103,20 @@
   .input:focus { border-color: var(--text-disabled); box-shadow: 0 0 0 3px rgba(0,0,0,0.06); }
   .input::placeholder { color: var(--text-disabled); }
   textarea.input { height: auto; padding: 10px 12px; resize: none; }
+  select.input { cursor: pointer; }
 
   .card { background: var(--bg); border: 1px solid var(--border); border-radius: var(--radius-lg); }
   .card-hover { @apply card; transition: border-color 0.15s, box-shadow 0.15s; cursor: pointer; }
   .card-hover:hover { border-color: var(--border-strong); box-shadow: 0 2px 8px rgba(0,0,0,0.06); }
+
+  .glass-card {
+    background: rgba(255,255,255,0.7);
+    backdrop-filter: blur(12px);
+    -webkit-backdrop-filter: blur(12px);
+    border: 1px solid rgba(255,255,255,0.5);
+    border-radius: var(--radius-xl);
+    box-shadow: 0 4px 24px rgba(0,0,0,0.06);
+  }
 
   .divider { height: 1px; background: var(--border); }
 
@@ -139,7 +153,7 @@
     height: 34px; font-size: 13.5px; font-weight: 500; color: var(--text-secondary); text-decoration: none;
   }
   .nav-item:hover { background: var(--bg-muted); color: var(--text); }
-  .nav-item.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); }
+  .nav-item.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 2px rgba(0,0,0,0.06); font-weight: 600; }
 
   .sheet {
     @apply fixed inset-x-0 bottom-0 z-50;
@@ -150,6 +164,15 @@
   .sheet-handle::after {
     content: ''; width: 36px; height: 4px;
     background: var(--border-strong); border-radius: 4px; display: block;
+  }
+
+  .modal {
+    @apply fixed inset-0 z-50 flex items-center justify-center p-4;
+  }
+  .modal-card {
+    @apply bg-white rounded-xl shadow-2xl w-full max-w-md;
+    border: 1px solid var(--border);
+    animation: scale-in 0.18s cubic-bezier(0.22, 1, 0.36, 1);
   }
 
   .overlay { @apply fixed inset-0 z-40; background: rgba(0,0,0,0.35); backdrop-filter: blur(2px); }
@@ -166,8 +189,10 @@
   .spinner { border: 2px solid var(--border); border-top-color: var(--text); border-radius: 50%; animation: spin 0.7s linear infinite; }
   .spinner-white { border: 2px solid rgba(255,255,255,0.3); border-top-color: white; border-radius: 50%; animation: spin 0.7s linear infinite; }
 
-  .progress-bar { height: 3px; background: var(--bg-muted); border-radius: 4px; overflow: hidden; }
+  .progress-bar { height: 4px; background: var(--bg-muted); border-radius: 4px; overflow: hidden; }
   .progress-fill { height: 100%; background: var(--text); border-radius: 4px; transition: width 0.5s ease; }
+  .progress-fill-success { background: var(--success); }
+  .progress-fill-accent { background: var(--accent); }
 
   .cmd-item {
     @apply flex items-center gap-3 px-3 rounded-md transition-all duration-100 cursor-pointer;
@@ -179,8 +204,21 @@
   .empty-state { @apply flex flex-col items-center justify-center text-center; padding: 48px 24px; }
   .empty-icon { width: 48px; height: 48px; background: var(--bg-muted); border-radius: var(--radius-xl); @apply flex items-center justify-center mb-3; }
 
+  .tab-bar { @apply flex gap-1 p-1 rounded-lg; background: var(--bg-muted); }
+  .tab-item {
+    @apply flex-1 flex items-center justify-center gap-1.5 rounded-md font-medium transition-all duration-150;
+    height: 30px; font-size: 13px; color: var(--text-muted); cursor: pointer; border: none; background: transparent;
+  }
+  .tab-item.active { background: var(--bg); color: var(--text); box-shadow: 0 1px 3px rgba(0,0,0,0.08); }
+
   .pt-safe { padding-top: var(--safe-top); }
   .pb-nav { padding-bottom: 68px; }
+
+  .invite-box {
+    background: linear-gradient(135deg, rgba(124,58,237,0.06) 0%, rgba(124,58,237,0.02) 100%);
+    border: 1px solid rgba(124,58,237,0.15);
+    border-radius: var(--radius-lg);
+  }
 }
 
 @layer utilities {

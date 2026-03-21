@@ -12,21 +12,6 @@ const TEAMS = [
   { name: 'GridMind', status: 'ACTIVE' as TeamStatus, room: 'C-302', phone: '+919876540008', project: 'Smart Grid Optimizer', members: ['Arun Menon', 'Shweta Singh'] },
   { name: 'HexCore', status: 'REGISTERED' as TeamStatus, room: undefined, phone: '+919876540009', project: undefined, members: ['Nitesh Sharma', 'Rakhi Gupta'] },
   { name: 'InfinityIO', status: 'CHECKED_IN' as TeamStatus, room: 'D-401', phone: '+919876540010', project: 'Serverless Orchestration', members: ['Manish Joshi', 'Sunita Rao', 'Vijay Patel'] },
-  { name: 'JoltJS', status: 'ACTIVE' as TeamStatus, room: 'A-104', phone: '+919876540011', project: 'Edge Computing Runtime', members: ['Abhishek Das', 'Richa Verma'] },
-  { name: 'KernelPanic', status: 'SUBMITTED' as TeamStatus, room: 'B-203', phone: '+919876540012', project: 'Linux Kernel Profiler', members: ['Girish Nair', 'Anita Mishra', 'Sameer Gupta'] },
-  { name: 'LambdaLock', status: 'CHECKED_IN' as TeamStatus, room: 'C-303', phone: '+919876540013', project: 'Zero-Trust Auth SDK', members: ['Harish Pillai', 'Deepa Shah'] },
-  { name: 'MeshMakers', status: 'ACTIVE' as TeamStatus, room: 'D-402', phone: '+919876540014', project: 'P2P Video Streaming', members: ['Rajesh Kumar', 'Smita Bhat', 'Akash Tiwari'] },
-  { name: 'NullPointer', status: 'REGISTERED' as TeamStatus, room: undefined, phone: '+919876540015', project: undefined, members: ['Vinod Singh', 'Anjali Reddy'] },
-  { name: 'OctaFlow', status: 'CHECKED_IN' as TeamStatus, room: 'A-105', phone: '+919876540016', project: 'ML Pipeline Automation', members: ['Suresh Joshi', 'Kavitha Patel', 'Nitin Sharma'] },
-  { name: 'PulseBit', status: 'ACTIVE' as TeamStatus, room: 'B-204', phone: '+919876540017', project: 'Wearable Health Monitor', members: ['Balaji Das', 'Chitra Verma'] },
-  { name: 'QuantumByte', status: 'REGISTERED' as TeamStatus, room: undefined, phone: '+919876540018', project: undefined, members: ['Mohit Gupta', 'Sunanda Rao'] },
-  { name: 'RustForge', status: 'SUBMITTED' as TeamStatus, room: 'C-304', phone: '+919876540019', project: 'Memory-Safe Web Server', members: ['Ashwin Nair', 'Padma Krishnan'] },
-  { name: 'SkyHook', status: 'ACTIVE' as TeamStatus, room: 'D-403', phone: '+919876540020', project: 'Drone Fleet Manager', members: ['Dinesh Shah', 'Kaveri Mishra', 'Ramesh Kumar'] },
-  { name: 'TokenTribe', status: 'CHECKED_IN' as TeamStatus, room: 'A-106', phone: '+919876540021', project: 'NFT Marketplace', members: ['Aryan Tiwari', 'Shobha Menon'] },
-  { name: 'UltraSync', status: 'ACTIVE' as TeamStatus, room: 'B-205', phone: '+919876540022', project: 'Real-time DB Sync', members: ['Karthik Singh', 'Nalini Reddy'] },
-  { name: 'VectorVault', status: 'REGISTERED' as TeamStatus, room: undefined, phone: '+919876540023', project: undefined, members: ['Prakash Patel', 'Sudha Das'] },
-  { name: 'WireFrame', status: 'CHECKED_IN' as TeamStatus, room: 'C-305', phone: '+919876540024', project: 'Design System CLI', members: ['Ajay Sharma', 'Meena Verma', 'Sunil Gupta'] },
-  { name: 'XenoStack', status: 'SUBMITTED' as TeamStatus, room: 'D-404', phone: '+919876540025', project: 'Multi-Cloud Orchestrator', members: ['Vikas Pillai', 'Rekha Nair'] },
 ];
 
 async function main() {
@@ -41,7 +26,6 @@ async function main() {
   const coords = await Promise.all([
     prisma.user.upsert({ where: { email: 'coord1@nexora.dev' }, update: {}, create: { name: 'Riya Sharma', email: 'coord1@nexora.dev', role: 'COORDINATOR' } }),
     prisma.user.upsert({ where: { email: 'coord2@nexora.dev' }, update: {}, create: { name: 'Aakash Patel', email: 'coord2@nexora.dev', role: 'COORDINATOR' } }),
-    prisma.user.upsert({ where: { email: 'coord3@nexora.dev' }, update: {}, create: { name: 'Sonal Mehta', email: 'coord3@nexora.dev', role: 'COORDINATOR' } }),
   ]);
 
   const hackathon = await prisma.hackathon.upsert({
@@ -56,6 +40,7 @@ async function main() {
       endDate: new Date('2024-11-16T18:00:00'),
       status: 'ACTIVE',
       maxTeams: 30,
+      mode: 'PREDEFINED',
       createdById: admin.id,
     },
   });
@@ -103,10 +88,19 @@ async function main() {
     console.log(`  ✓ ${t.name} [${t.status}]`);
   }
 
+  // Seed invite link
+  await prisma.inviteLink.create({
+    data: {
+      hackathonId: hackathon.id,
+      createdById: admin.id,
+      expiresAt: new Date(Date.now() + 7 * 24 * 3600000),
+    },
+  });
+
   // Seed dev OTP for admin
   await prisma.otpCode.create({
     data: {
-      code: '000000',
+      code: '123456',
       contact: 'admin@nexora.dev',
       expiresAt: new Date(Date.now() + 365 * 24 * 3600000),
       userId: admin.id,

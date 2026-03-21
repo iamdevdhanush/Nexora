@@ -13,6 +13,7 @@ const createSchema = z.object({
   startDate: z.string(),
   endDate: z.string(),
   maxTeams: z.number().optional(),
+  mode: z.enum(['PREDEFINED', 'ON_SPOT']).optional(),
 });
 
 const hackathonInclude = {
@@ -77,7 +78,7 @@ hackathonsRouter.post('/', requireAdmin, async (req: AuthRequest, res) => {
 
 // PATCH update
 hackathonsRouter.patch('/:id', requireAdmin, async (req, res) => {
-  const { name, description, venue, startDate, endDate, status, maxTeams } = req.body;
+  const { name, description, venue, startDate, endDate, status, maxTeams, mode } = req.body;
   try {
     const h = await prisma.hackathon.update({
       where: { id: req.params.id },
@@ -89,6 +90,7 @@ hackathonsRouter.patch('/:id', requireAdmin, async (req, res) => {
         ...(endDate && { endDate: new Date(endDate) }),
         ...(status && { status }),
         ...(maxTeams !== undefined && { maxTeams }),
+        ...(mode && { mode }),
       },
       include: hackathonInclude,
     });

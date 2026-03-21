@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { X, Phone, UserCheck, RotateCcw, MessageSquare, Edit2, Check, MapPin, ExternalLink } from 'lucide-react';
+import { X, Phone, UserCheck, RotateCcw, MessageSquare, Edit2, Check, MapPin, ExternalLink, Trash2 } from 'lucide-react';
 import { Team, TeamStatus, useTeamsStore } from '@/store/teamsStore';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useUIStore } from '@/store/uiStore';
@@ -16,7 +16,7 @@ const STATUS_ACTIONS: { from: TeamStatus[]; to: TeamStatus; label: string; style
 
 export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void }) {
   const { activeHackathon } = useHackathonStore();
-  const { updateTeam, checkIn } = useTeamsStore();
+  const { updateTeam, checkIn, deleteTeam } = useTeamsStore();
   const { toast, setBroadcastOpen } = useUIStore();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'SUPER_ADMIN';
@@ -24,6 +24,7 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
   const [editingRoom, setEditingRoom] = useState(false);
   const [roomVal, setRoomVal] = useState(team.room ?? '');
   const [saving, setSaving] = useState(false);
+  const [confirmDelete, setConfirmDelete] = useState(false);
 
   useEffect(() => {
     if (!activeHackathon || !isAdmin) return;
@@ -52,6 +53,15 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
     await updateTeam(activeHackathon.id, team.id, { room: roomVal });
     setEditingRoom(false);
     toast('Room updated', 'success');
+  };
+
+  const handleDelete = async () => {
+    if (!activeHackathon) return;
+    try {
+      await deleteTeam(activeHackathon.id, team.id);
+      toast('Team deleted', 'success');
+      onClose();
+    } catch (e: any) { toast(e.message, 'error'); }
   };
 
   const actions = STATUS_ACTIONS.filter((a) => a.from.includes(team.status));
@@ -104,9 +114,12 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
                     </p>
                     {p.email && <p className="text-caption truncate">{p.email}</p>}
                   </div>
-                  {p.phone && <a href={`tel:${p.phone}`} className="btn btn-ghost btn-icon btn-sm" onClick={(e) => e.stopPropagation()}><Phone className="w-3.5 h-3.5" /></a>}
+                  {p.phone && <a href={`tel:${p.phone}`} className="btn btn-ghost btn-icon btn-sm"><Phone className="w-3.5 h-3.5" /></a>}
                 </div>
               ))}
+              {team.participants.length === 0 && (
+                <p className="text-caption px-4 py-3">No members added</p>
+              )}
             </div>
           </div>
 
@@ -137,7 +150,7 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
 
           {isAdmin && (
             <div>
-              <p className="text-label mb-2">Coordinator</p>
+              <p className="text-label mb-2">Assigned coordinator</p>
               <select value={team.coordinator?.id ?? ''} onChange={(e) => updateTeam(activeHackathon!.id, team.id, { coordinatorId: e.target.value || undefined })} className="input">
                 <option value="">Unassigned</option>
                 {coordinators.map((c) => <option key={c.id} value={c.id}>{c.name}</option>)}
@@ -169,11 +182,29 @@ export function TeamDrawer({ team, onClose }: { team: Team; onClose: () => void 
               <div className="card px-4 py-3">
                 <p className="font-semibold" style={{ fontSize: 14 }}>{team.projectName}</p>
                 {team.projectUrl && (
-                  <a href={team.projectUrl} target="_blank" rel="noopener" className="flex items-center gap-1 text-caption mt-1" style={{ color: 'var(--accent)' }} onClick={(e) => e.stopPropagation()}>
+                  <a href={team.projectUrl} target="_blank" rel="noopener" className="flex items-center gap-1 text-caption mt-1" style={{ color: 'var(--accent)' }}>
                     {team.projectUrl}<ExternalLink className="w-3 h-3" />
                   </a>
                 )}
               </div>
+            </div>
+          )}
+
+          {isAdmin && (
+            <div className="pt-2">
+              {!confirmDelete ? (
+                <button onClick={() => setConfirmDelete(true)} className="btn btn-danger w-full">
+                  <Trash2 className="w-3.5 h-3.5" />Delete team
+                </button>
+              ) : (
+                <div className="p-4 rounded-lg" style={{ background: 'var(--danger-bg)', border: '1px solid rgba(220,38,38,0.2)' }}>
+                  <p className="font-semibold mb-3" style={{ fontSize: 14, color: 'var(--danger)' }}>Delete "{team.name}"? This cannot be undone.</p>
+                  <div className="flex gap-2">
+                    <button onClick={handleDelete} className="btn btn-danger flex-1">Yes, delete</button>
+                    <button onClick={() => setConfirmDelete(false)} className="btn btn-secondary flex-1">Cancel</button>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>

@@ -5,10 +5,11 @@ export interface AuthUser {
 }
 
 export type HackathonStatus = 'DRAFT' | 'ACTIVE' | 'ENDED';
+export type HackathonMode = 'PREDEFINED' | 'ON_SPOT';
 
 export interface Hackathon {
   id: string; name: string; description?: string; startDate: string; endDate: string;
-  status: HackathonStatus; venue?: string; maxTeams?: number; createdAt: string;
+  status: HackathonStatus; mode: HackathonMode; venue?: string; maxTeams?: number; createdAt: string;
 }
 
 export type TeamStatus = 'REGISTERED' | 'CHECKED_IN' | 'ACTIVE' | 'SUBMITTED' | 'DISQUALIFIED';

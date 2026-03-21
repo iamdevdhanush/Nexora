@@ -1,17 +1,24 @@
 import { useEffect } from 'react';
-import { Plus, Zap, Users, Calendar } from 'lucide-react';
+import { Plus, Zap, Users, Calendar, Settings, Link2 } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useUIStore } from '@/store/uiStore';
 import { useAuthStore } from '@/store/authStore';
 import { cn, formatDate } from '@/lib/utils';
+import { useNavigate } from 'react-router-dom';
 
 export function HackathonsPage() {
   const { hackathons, loading, fetchHackathons, setActiveHackathon, activeHackathon } = useHackathonStore();
-  const { setCreateHackathonOpen } = useUIStore();
+  const { setCreateHackathonOpen, setInviteOpen } = useUIStore();
   const { user } = useAuthStore();
   const isAdmin = user?.role === 'SUPER_ADMIN';
+  const navigate = useNavigate();
 
   useEffect(() => { fetchHackathons(); }, []);
+
+  const handleSelect = (h: typeof hackathons[0]) => {
+    setActiveHackathon(h);
+    navigate('/');
+  };
 
   return (
     <div className="max-w-2xl mx-auto px-5 py-6">
@@ -40,18 +47,19 @@ export function HackathonsPage() {
           <p className="text-caption mt-1">Create your first event workspace</p>
           {isAdmin && (
             <button className="btn btn-primary btn-sm mt-4" onClick={() => setCreateHackathonOpen(true)}>
-              <Plus className="w-3.5 h-3.5" /> Create hackathon
+              <Plus className="w-3.5 h-3.5" />Create hackathon
             </button>
           )}
         </div>
       ) : (
         <div className="space-y-2">
           {hackathons.map((h) => (
-            <button key={h.id} onClick={() => setActiveHackathon(h)}
-              className={cn('card-hover w-full text-left p-5', activeHackathon?.id === h.id && 'ring-2 ring-[#0A0A0A]')}>
+            <div key={h.id}
+              className={cn('card p-5', activeHackathon?.id === h.id && 'ring-2 ring-[#0A0A0A]')}
+              style={{ cursor: 'default' }}>
               <div className="flex items-start justify-between gap-3">
                 <div className="flex-1 min-w-0">
-                  <div className="flex items-center gap-2">
+                  <div className="flex items-center gap-2 mb-0.5">
                     <p className="font-semibold truncate" style={{ fontSize: 15 }}>{h.name}</p>
                     {activeHackathon?.id === h.id && (
                       <span className="px-1.5 py-0.5 rounded text-white font-semibold uppercase flex-shrink-0" style={{ fontSize: 9, letterSpacing: '0.05em', background: '#0A0A0A' }}>Active</span>
@@ -64,15 +72,28 @@ export function HackathonsPage() {
                   {h.status}
                 </span>
               </div>
-              <div className="flex items-center gap-4 mt-3">
+
+              <div className="flex items-center gap-4 mt-3 mb-4">
                 <span className="flex items-center gap-1.5 text-caption">
                   <Calendar className="w-3.5 h-3.5" />{formatDate(h.startDate)}
                 </span>
                 <span className="flex items-center gap-1.5 text-caption">
                   <Users className="w-3.5 h-3.5" />{h._count?.teams ?? 0} teams
                 </span>
+                <span className="text-caption capitalize">{h.mode?.toLowerCase().replace('_', '-') ?? 'predefined'} mode</span>
               </div>
-            </button>
+
+              <div className="flex gap-2">
+                <button onClick={() => handleSelect(h)} className="btn btn-secondary btn-sm flex-1">
+                  {activeHackathon?.id === h.id ? 'Go to dashboard' : 'Set as active'}
+                </button>
+                {isAdmin && (
+                  <button onClick={() => { setActiveHackathon(h); setInviteOpen(true); }} className="btn btn-ghost btn-icon btn-sm" title="Invite coordinators">
+                    <Link2 className="w-3.5 h-3.5" />
+                  </button>
+                )}
+              </div>
+            </div>
           ))}
         </div>
       )}

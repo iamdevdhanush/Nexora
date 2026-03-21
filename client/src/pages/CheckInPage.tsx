@@ -57,7 +57,7 @@ export function CheckInPage() {
         <h1 className="text-heading">Check-in</h1>
         <div className="flex items-center gap-1.5">
           <ScanLine className="w-4 h-4" style={{ color: 'var(--text-muted)' }} />
-          <span className="text-caption">QR mode</span>
+          <span className="text-caption">QR mode ready</span>
         </div>
       </div>
 
@@ -66,18 +66,26 @@ export function CheckInPage() {
           <p className="font-semibold" style={{ fontSize: 14 }}>Progress</p>
           <span className="font-bold" style={{ fontSize: 22 }}>{pct}%</span>
         </div>
-        <p className="text-caption mb-3">{checkedCount} of {teams.length} teams</p>
-        <div className="progress-bar"><div className="progress-fill" style={{ width: `${pct}%` }} /></div>
+        <p className="text-caption mb-3">{checkedCount} of {teams.length} teams · {teams.length - checkedCount} remaining</p>
+        <div className="progress-bar">
+          <div className="progress-fill progress-fill-success" style={{ width: `${pct}%` }} />
+        </div>
       </div>
 
       <div className="relative mb-3">
         <Search className="absolute left-3.5 top-1/2 -translate-y-1/2 w-4 h-4 pointer-events-none" style={{ color: 'var(--text-disabled)' }} />
-        <input ref={inputRef} type="search" value={query}
+        <input
+          ref={inputRef}
+          type="search"
+          value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={(e) => e.key === 'Enter' && matches.length === 1 && doCheckIn(matches[0])}
           placeholder="Team name, member, or phone…"
-          className="input pl-10" style={{ height: 44, fontSize: 15 }}
-          autoComplete="off" autoCorrect="off" />
+          className="input pl-10"
+          style={{ height: 44, fontSize: 15 }}
+          autoComplete="off"
+          autoCorrect="off"
+        />
       </div>
 
       {matches.length > 0 && (
