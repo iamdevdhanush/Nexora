@@ -1,6 +1,6 @@
 import { useState } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { ArrowRight, Shield, Zap, ChevronLeft, User } from 'lucide-react';
+import { ArrowRight, ChevronLeft, Zap, Shield, User } from 'lucide-react';
 import { api } from '@/lib/api';
 import { useAuthStore } from '@/store/authStore';
 
@@ -19,32 +19,54 @@ export function AuthPage() {
 
   const requestOtp = async () => {
     if (!contact.trim()) return;
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
     try {
-      const res = await api.post<{ message: string; devOtp?: string }>('/api/auth/otp/verify', { contact: contact.trim() });
+      const res = await api.post<{ message: string; devOtp?: string }>('/auth/otp/request', {
+        contact: contact.trim(),
+      });
       if (res.devOtp) setDevOtp(res.devOtp);
       setStep('otp');
-    } catch (e: any) { setError(e.message); }
-    finally { setLoading(false); }
+    } catch (e: any) {
+      setError(e.message);
+    } finally {
+      setLoading(false);
+    }
   };
 
   const verifyOtp = async () => {
     if (otp.length !== 6) return;
-    setLoading(true); setError('');
+    setLoading(true);
+    setError('');
     try {
-      const res = await api.post<{ token: string; user: any }>('/api/auth/otp/verify', { contact: contact.trim(), code: otp });
-      const generatedName = contact.includes('@') ? contact.split('@')[0] : 'User';
-      if (res.user.name === generatedName || res.user.name === 'User') {
+      const res = await api.post<{ token: string; user: any }>('/auth/otp/verify', {
+        contact: contact.trim(),
+        code: otp,
+      });
+      const isNewUser =
+        res.user.name === contact.split('@')[0] ||
+        res.user.name === 'User' ||
+        !res.user.name;
+
+      if (isNewUser) {
         setAuth(res.user, res.token);
         setStep('onboarding');
         return;
       }
       setAuth(res.user, res.token);
       const pending = sessionStorage.getItem('pendingInvite');
-      if (pending) { sessionStorage.removeItem('pendingInvite'); navigate(`/join/${pending}`, { replace: true }); }
-      else navigate('/', { replace: true });
-    } catch { setError('Invalid code. Please try again.'); }
-    finally { setLoading(false); }
+      if (pending) {
+        sessionStorage.removeItem('pendingInvite');
+        navigate(`/join/${pending}`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    } catch {
+      setError('Invalid code. Please try again.');
+      setOtp('');
+    } finally {
+      setLoading(false);
+    }
   };
 
   const completeOnboarding = async () => {
@@ -56,121 +78,354 @@ export function AuthPage() {
       const token = useAuthStore.getState().token!;
       setAuth(user, token);
       const pending = sessionStorage.getItem('pendingInvite');
-      if (pending) { sessionStorage.removeItem('pendingInvite'); navigate(`/join/${pending}`, { replace: true }); }
-      else navigate('/', { replace: true });
-    } catch { navigate('/', { replace: true }); }
-    finally { setLoading(false); }
+      if (pending) {
+        sessionStorage.removeItem('pendingInvite');
+        navigate(`/join/${pending}`, { replace: true });
+      } else {
+        navigate('/', { replace: true });
+      }
+    } catch {
+      navigate('/', { replace: true });
+    } finally {
+      setLoading(false);
+    }
   };
 
-  const inputStyle = { height: 48, fontSize: 15, background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)' };
-  const btnStyle = { height: 48, fontSize: 15, background: 'white', color: '#0A0A0A' };
+  const headings: Record<Step, { title: string; sub: string }> = {
+    contact: { title: 'Welcome back', sub: 'Enter your email or phone to continue' },
+    otp: { title: 'Check your inbox', sub: `We sent a 6-digit code to ${contact}` },
+    onboarding: { title: 'Almost there', sub: 'What should we call you?' },
+  };
 
   return (
-    <div className="min-h-screen bg-[#0A0A0A] flex flex-col relative overflow-hidden">
-      <div className="absolute inset-0 pointer-events-none" style={{ background: 'radial-gradient(ellipse at 60% 0%, rgba(124,58,237,0.15) 0%, transparent 55%)' }} />
-      <header className="relative z-10 flex items-center gap-2 px-6 py-5">
-        <div className="w-6 h-6 bg-white/10 rounded-md flex items-center justify-center">
-          <Zap className="w-3.5 h-3.5 text-white" strokeWidth={2.5} />
+    <div
+      className="min-h-screen flex flex-col relative overflow-hidden"
+      style={{ background: '#060606' }}
+    >
+      {/* Background effects */}
+      <div
+        className="absolute inset-0 pointer-events-none"
+        style={{
+          background:
+            'radial-gradient(ellipse 70% 55% at 50% -10%, rgba(167,139,250,0.12) 0%, transparent 70%)',
+        }}
+      />
+      <div
+        className="absolute bottom-0 left-0 right-0 pointer-events-none"
+        style={{
+          height: 300,
+          background:
+            'radial-gradient(ellipse 80% 60% at 50% 120%, rgba(0,232,122,0.05) 0%, transparent 70%)',
+        }}
+      />
+
+      {/* Grid overlay */}
+      <div
+        className="absolute inset-0 pointer-events-none opacity-[0.03]"
+        style={{
+          backgroundImage: `
+            linear-gradient(rgba(255,255,255,0.5) 1px, transparent 1px),
+            linear-gradient(90deg, rgba(255,255,255,0.5) 1px, transparent 1px)
+          `,
+          backgroundSize: '48px 48px',
+        }}
+      />
+
+      {/* Header */}
+      <header className="relative z-10 flex items-center gap-2.5 px-6 py-5">
+        <div
+          className="w-8 h-8 rounded-lg flex items-center justify-center"
+          style={{ background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.1)' }}
+        >
+          <Zap className="w-4 h-4 text-white" strokeWidth={2.5} />
         </div>
-        <span className="text-white/70 font-medium text-sm tracking-tight">Nexora</span>
+        <span
+          className="font-display font-bold text-white tracking-tight"
+          style={{ fontSize: 15 }}
+        >
+          Nexora
+        </span>
+        <span
+          className="ml-auto text-xs font-mono px-2 py-0.5 rounded"
+          style={{
+            background: 'rgba(0,232,122,0.1)',
+            color: '#00E87A',
+            border: '1px solid rgba(0,232,122,0.2)',
+          }}
+        >
+          BETA
+        </span>
       </header>
-      <div className="relative z-10 flex-1 flex flex-col justify-end px-6 pb-12 max-w-sm mx-auto w-full">
+
+      {/* Main content */}
+      <div className="relative z-10 flex-1 flex flex-col justify-center px-6 pb-12 max-w-sm mx-auto w-full">
+
+        {/* Step indicator */}
+        <div className="flex items-center gap-2 mb-8">
+          {(['contact', 'otp', 'onboarding'] as Step[]).map((s, i) => (
+            <div
+              key={s}
+              className="flex-1 h-0.5 rounded-full transition-all duration-400"
+              style={{
+                background:
+                  s === step
+                    ? 'var(--purple)'
+                    : ['contact', 'otp', 'onboarding'].indexOf(s) <
+                      ['contact', 'otp', 'onboarding'].indexOf(step)
+                    ? 'rgba(167,139,250,0.6)'
+                    : 'rgba(255,255,255,0.08)',
+              }}
+            />
+          ))}
+        </div>
+
+        {/* Heading */}
         <div className="mb-8">
-          <h1 className="text-white font-bold tracking-tight mb-2" style={{ fontSize: 30, lineHeight: 1.15 }}>
-            {step === 'contact' && <>Sign in to<br />your workspace</>}
-            {step === 'otp' && <>Verify your<br />identity</>}
-            {step === 'onboarding' && <>One last<br />thing</>}
+          <h1
+            className="font-display font-bold text-white mb-2"
+            style={{ fontSize: 32, lineHeight: 1.15, letterSpacing: '-0.025em' }}
+          >
+            {headings[step].title}
           </h1>
-          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.45)', lineHeight: 1.6 }}>
-            {step === 'contact' && 'Enter your email or phone to continue'}
-            {step === 'otp' && `We sent a 6-digit code to ${contact}`}
-            {step === 'onboarding' && 'What should we call you?'}
+          <p style={{ fontSize: 14, color: 'rgba(255,255,255,0.4)', lineHeight: 1.6 }}>
+            {headings[step].sub}
           </p>
         </div>
+
+        {/* Forms */}
         <div className="space-y-3">
+          {/* Error */}
           {error && (
-            <div className="px-4 py-3 rounded-lg text-sm" style={{ background: 'rgba(220,38,38,0.1)', color: '#FCA5A5', border: '1px solid rgba(220,38,38,0.2)' }}>
+            <div
+              className="px-4 py-3 rounded-xl text-sm animate-fade-in"
+              style={{
+                background: 'rgba(248,113,113,0.08)',
+                border: '1px solid rgba(248,113,113,0.2)',
+                color: '#FCA5A5',
+              }}
+            >
               {error}
             </div>
           )}
+
+          {/* Contact Step */}
           {step === 'contact' && (
             <>
-              <input type="text" inputMode="email" autoFocus value={contact} onChange={(e) => setContact(e.target.value)}
+              <input
+                type="text"
+                inputMode="email"
+                autoFocus
+                value={contact}
+                onChange={(e) => setContact(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && requestOtp()}
                 placeholder="email or phone number"
-                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none transition-all"
-                style={inputStyle}
-                onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
-              <button onClick={requestOtp} disabled={loading || !contact.trim()}
-                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg press"
-                style={{ ...btnStyle, opacity: loading || !contact.trim() ? 0.5 : 1 }}>
-                {loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <>Continue <ArrowRight className="w-4 h-4" /></>}
+                className="input-dark"
+              />
+              <button
+                onClick={requestOtp}
+                disabled={loading || !contact.trim()}
+                className="btn-dark-primary w-full"
+                style={{
+                  height: 52,
+                  background: loading || !contact.trim() ? 'rgba(255,255,255,0.06)' : 'white',
+                  color: loading || !contact.trim() ? 'rgba(255,255,255,0.3)' : '#000',
+                  borderRadius: 'var(--r-md)',
+                  border: 'none',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading || !contact.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'all 0.2s',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                {loading ? (
+                  <div className="spinner" style={{ width: 18, height: 18 }} />
+                ) : (
+                  <>
+                    Continue <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </>
           )}
+
+          {/* OTP Step */}
           {step === 'otp' && (
             <>
               {devOtp && (
-                <div className="flex items-center gap-3 px-4 py-3 rounded-lg cursor-pointer"
-                  style={{ background: 'rgba(124,58,237,0.12)', border: '1px solid rgba(124,58,237,0.2)' }}
-                  onClick={() => setOtp(devOtp)}>
-                  <Shield className="w-4 h-4 flex-shrink-0" style={{ color: '#A78BFA' }} />
-                  <div>
-                    <p style={{ fontSize: 11, color: '#A78BFA', fontWeight: 600, letterSpacing: '0.05em', textTransform: 'uppercase' }}>Dev Mode</p>
-                    <p className="font-mono font-bold text-white" style={{ fontSize: 18, letterSpacing: '0.15em' }}>{devOtp}</p>
+                <button
+                  onClick={() => setOtp(devOtp)}
+                  className="dev-badge w-full text-left animate-fade-in press"
+                  style={{ display: 'block' }}
+                >
+                  <div className="flex items-center gap-3">
+                    <Shield className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--purple)' }} />
+                    <div className="flex-1">
+                      <p
+                        style={{
+                          fontSize: 10,
+                          color: 'var(--purple)',
+                          fontWeight: 700,
+                          letterSpacing: '0.1em',
+                          textTransform: 'uppercase',
+                        }}
+                      >
+                        Dev Mode — tap to fill
+                      </p>
+                      <p
+                        className="font-mono font-bold text-white"
+                        style={{ fontSize: 22, letterSpacing: '0.2em', marginTop: 2 }}
+                      >
+                        {devOtp}
+                      </p>
+                    </div>
                   </div>
-                  <span style={{ fontSize: 11, color: 'rgba(255,255,255,0.3)', marginLeft: 'auto' }}>tap to fill</span>
-                </div>
+                </button>
               )}
-              <input type="number" inputMode="numeric" autoFocus maxLength={6}
-                value={otp} onChange={(e) => setOtp(e.target.value.slice(0, 6))}
+
+              <input
+                type="number"
+                inputMode="numeric"
+                autoFocus
+                maxLength={6}
+                value={otp}
+                onChange={(e) => setOtp(e.target.value.slice(0, 6))}
                 onKeyDown={(e) => e.key === 'Enter' && otp.length === 6 && verifyOtp()}
                 placeholder="000000"
-                className="w-full text-center font-mono font-bold text-white placeholder:text-white/20 outline-none rounded-lg"
-                style={{ ...inputStyle, height: 56, fontSize: 28, letterSpacing: '0.25em' }}
-                onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
-              <button onClick={verifyOtp} disabled={loading || otp.length !== 6}
-                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg press"
-                style={{ ...btnStyle, opacity: loading || otp.length !== 6 ? 0.5 : 1 }}>
-                {loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <>Verify <ArrowRight className="w-4 h-4" /></>}
+                className="otp-input"
+              />
+
+              <button
+                onClick={verifyOtp}
+                disabled={loading || otp.length !== 6}
+                style={{
+                  width: '100%',
+                  height: 52,
+                  background:
+                    loading || otp.length !== 6
+                      ? 'rgba(0,232,122,0.15)'
+                      : 'var(--green)',
+                  color: loading || otp.length !== 6 ? 'rgba(0,232,122,0.5)' : '#000',
+                  borderRadius: 'var(--r-md)',
+                  border: 'none',
+                  fontSize: 15,
+                  fontWeight: 700,
+                  cursor: loading || otp.length !== 6 ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'all 0.2s',
+                  fontFamily: 'Syne, sans-serif',
+                  letterSpacing: '0.01em',
+                }}
+              >
+                {loading ? (
+                  <div className="spinner-green" style={{ width: 18, height: 18 }} />
+                ) : (
+                  <>
+                    Verify Code <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
-              <button onClick={() => { setStep('contact'); setOtp(''); setError(''); }}
-                className="w-full flex items-center justify-center gap-1.5"
-                style={{ height: 40, fontSize: 13, color: 'rgba(255,255,255,0.35)' }}>
+
+              <button
+                onClick={() => { setStep('contact'); setOtp(''); setError(''); }}
+                style={{
+                  width: '100%',
+                  height: 44,
+                  background: 'transparent',
+                  border: 'none',
+                  fontSize: 13,
+                  color: 'rgba(255,255,255,0.3)',
+                  cursor: 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 4,
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
                 <ChevronLeft className="w-3.5 h-3.5" /> Back
               </button>
             </>
           )}
+
+          {/* Onboarding Step */}
           {step === 'onboarding' && (
             <>
-              <div className="flex items-center gap-3 px-4 py-4 rounded-xl" style={{ background: 'rgba(255,255,255,0.05)', border: '1px solid rgba(255,255,255,0.08)' }}>
-                <div className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0" style={{ background: 'rgba(124,58,237,0.2)' }}>
-                  <User className="w-5 h-5" style={{ color: '#A78BFA' }} />
+              <div
+                className="flex items-center gap-3 p-4 rounded-xl animate-fade-in"
+                style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid rgba(255,255,255,0.08)' }}
+              >
+                <div
+                  className="w-10 h-10 rounded-full flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--purple-dim)', border: '1px solid rgba(167,139,250,0.2)' }}
+                >
+                  <User className="w-5 h-5" style={{ color: 'var(--purple)' }} />
                 </div>
                 <div>
-                  <p className="text-white font-semibold" style={{ fontSize: 14 }}>New account</p>
-                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)' }}>{contact}</p>
+                  <p className="text-white font-medium" style={{ fontSize: 14 }}>
+                    New account
+                  </p>
+                  <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.35)', marginTop: 1 }}>
+                    {contact}
+                  </p>
                 </div>
               </div>
-              <input type="text" autoFocus value={name} onChange={(e) => setName(e.target.value)}
+
+              <input
+                type="text"
+                autoFocus
+                value={name}
+                onChange={(e) => setName(e.target.value)}
                 onKeyDown={(e) => e.key === 'Enter' && completeOnboarding()}
                 placeholder="Your full name"
-                className="w-full px-4 rounded-lg text-white placeholder:text-white/25 outline-none"
-                style={inputStyle}
-                onFocus={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.2)')}
-                onBlur={(e) => (e.target.style.borderColor = 'rgba(255,255,255,0.1)')} />
-              <button onClick={completeOnboarding} disabled={loading || !name.trim()}
-                className="w-full flex items-center justify-center gap-2 font-semibold rounded-lg press"
-                style={{ ...btnStyle, opacity: loading || !name.trim() ? 0.5 : 1 }}>
-                {loading ? <div className="spinner" style={{ width: 18, height: 18 }} /> : <>Get started <ArrowRight className="w-4 h-4" /></>}
+                className="input-dark"
+              />
+
+              <button
+                onClick={completeOnboarding}
+                disabled={loading || !name.trim()}
+                style={{
+                  width: '100%',
+                  height: 52,
+                  background: loading || !name.trim() ? 'rgba(255,255,255,0.06)' : 'white',
+                  color: loading || !name.trim() ? 'rgba(255,255,255,0.3)' : '#000',
+                  borderRadius: 'var(--r-md)',
+                  border: 'none',
+                  fontSize: 15,
+                  fontWeight: 600,
+                  cursor: loading || !name.trim() ? 'not-allowed' : 'pointer',
+                  display: 'flex',
+                  alignItems: 'center',
+                  justifyContent: 'center',
+                  gap: 8,
+                  transition: 'all 0.2s',
+                  fontFamily: 'DM Sans, sans-serif',
+                }}
+              >
+                {loading ? (
+                  <div className="spinner" style={{ width: 18, height: 18 }} />
+                ) : (
+                  <>
+                    Get started <ArrowRight className="w-4 h-4" />
+                  </>
+                )}
               </button>
             </>
           )}
         </div>
-        <p style={{ fontSize: 12, color: 'rgba(255,255,255,0.25)', marginTop: 24, lineHeight: 1.6 }}>
-          By continuing, you agree to our terms of service and privacy policy.
+
+        <p
+          className="mt-8 text-center"
+          style={{ fontSize: 11.5, color: 'rgba(255,255,255,0.18)', lineHeight: 1.7 }}
+        >
+          By continuing, you agree to our Terms of Service and Privacy Policy.
         </p>
       </div>
     </div>

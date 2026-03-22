@@ -212,34 +212,6 @@ export function Sidebar() {
             )}
           </NavLink>
         ))}
-
-        {/* Always-visible create hackathon button for admins */}
-        {isAdmin && (
-          <div className="pt-3 mt-2 border-t" style={{ borderColor: 'var(--border)' }}>
-            <p className="text-label px-2.5 mb-2">Actions</p>
-            <button
-              onClick={() => setCreateHackathonOpen(true)}
-              className="nav-item w-full text-left"
-              style={{
-                background: 'var(--bg-elevated)',
-                border: '1px solid var(--border-strong)',
-                color: 'var(--text)',
-              }}
-            >
-              <Plus className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--green)' }} />
-              New hackathon
-            </button>
-            {activeHackathon && (
-              <button
-                onClick={() => setInviteOpen(true)}
-                className="nav-item w-full text-left mt-0.5"
-              >
-                <Link2 className="w-4 h-4 flex-shrink-0" style={{ color: 'var(--text-muted)' }} />
-                Invite coordinator
-              </button>
-            )}
-          </div>
-        )}
       </nav>
 
       {/* User */}

@@ -6,34 +6,50 @@ export function cn(...inputs: ClassValue[]) {
 }
 
 export function formatTime(date: string | Date) {
-  return new Date(date).toLocaleTimeString('en-IN', { hour: '2-digit', minute: '2-digit' });
+  return new Date(date).toLocaleTimeString('en-IN', {
+    hour: '2-digit',
+    minute: '2-digit',
+  });
 }
 
 export function formatDate(date: string | Date) {
   return new Date(date).toLocaleDateString('en-IN', {
-    day: 'numeric', month: 'short', year: 'numeric',
+    day: 'numeric',
+    month: 'short',
+    year: 'numeric',
   });
 }
 
 export function formatDateTime(date: string | Date) {
   return new Date(date).toLocaleString('en-IN', {
-    day: 'numeric', month: 'short', hour: '2-digit', minute: '2-digit',
+    day: 'numeric',
+    month: 'short',
+    hour: '2-digit',
+    minute: '2-digit',
   });
 }
 
-export function initials(name: string) {
-  return name.split(' ').slice(0, 2).map((n) => n[0]).join('').toUpperCase();
+export function initials(name: string): string {
+  return name
+    .split(' ')
+    .slice(0, 2)
+    .map((n) => n[0])
+    .join('')
+    .toUpperCase();
 }
 
-export function pluralize(n: number, word: string) {
+export function pluralize(n: number, word: string): string {
   return `${n} ${word}${n !== 1 ? 's' : ''}`;
 }
 
-export function slugify(str: string) {
-  return str.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/(^-|-$)/g, '');
+export function slugify(str: string): string {
+  return str
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
 }
 
-export function timeAgo(date: string | Date) {
+export function timeAgo(date: string | Date): string {
   const diff = Date.now() - new Date(date).getTime();
   const mins = Math.floor(diff / 60000);
   if (mins < 1) return 'just now';
@@ -41,4 +57,8 @@ export function timeAgo(date: string | Date) {
   const hrs = Math.floor(mins / 60);
   if (hrs < 24) return `${hrs}h ago`;
   return formatDate(date);
+}
+
+export function truncate(str: string, n: number): string {
+  return str.length > n ? str.slice(0, n - 1) + '…' : str;
 }

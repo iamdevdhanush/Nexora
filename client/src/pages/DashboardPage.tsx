@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { ArrowUpRight, Users, UserCheck, Send, Zap, Clock, Link2 } from 'lucide-react';
+import { ArrowUpRight, Users, UserCheck, Send, Zap, Clock, Link2, Activity, Plus } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useTeamsStore } from '@/store/teamsStore';
@@ -10,9 +10,14 @@ import { api } from '@/lib/api';
 import { cn, formatDate, pluralize } from '@/lib/utils';
 
 interface Metrics {
-  totalTeams: number; checkedIn: number; checkedInPercent: number;
-  active: number; submitted: number; missing: number;
-  totalParticipants: number; messagesToday: number;
+  totalTeams: number;
+  checkedIn: number;
+  checkedInPercent: number;
+  active: number;
+  submitted: number;
+  missing: number;
+  totalParticipants: number;
+  messagesToday: number;
 }
 
 export function DashboardPage() {
@@ -28,8 +33,12 @@ export function DashboardPage() {
   useEffect(() => {
     if (!activeHackathon) return;
     setMetricsLoading(true);
-    api.get<Metrics>(`/hackathons/${activeHackathon.id}/metrics`)
-      .then(setMetrics).catch(() => {}).finally(() => setMetricsLoading(false));
+    api
+      .get<Metrics>(`/hackathons/${activeHackathon.id}/metrics`)
+      .then(setMetrics)
+      .catch(() => {})
+      .finally(() => setMetricsLoading(false));
+
     const socket = getSocket();
     const handler = ({ payload }: any) => setMetrics(payload);
     socket.on('metrics:updated', handler);
@@ -39,124 +48,305 @@ export function DashboardPage() {
   const recentCheckins = [...teams]
     .filter((t) => t.checkInTime)
     .sort((a, b) => new Date(b.checkInTime!).getTime() - new Date(a.checkInTime!).getTime())
-    .slice(0, 8);
+    .slice(0, 6);
 
   if (!activeHackathon) {
     return (
-      <div className="h-full flex flex-col items-center justify-center py-24 px-6">
-        <div className="empty-icon"><Zap className="w-5 h-5" style={{ color: 'var(--text-muted)' }} /></div>
-        <h2 className="font-semibold mb-1" style={{ fontSize: 16 }}>No hackathon selected</h2>
-        <p className="text-caption text-center mb-6">Create your first event to get started</p>
+      <div className="min-h-screen flex flex-col items-center justify-center px-6 py-24">
+        <div
+          className="w-16 h-16 rounded-2xl flex items-center justify-center mb-6"
+          style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+        >
+          <Zap className="w-7 h-7" style={{ color: 'var(--text-muted)' }} />
+        </div>
+        <h2 className="text-heading mb-2">No hackathon selected</h2>
+        <p className="text-caption text-center mb-8">Create your first event workspace to get started.</p>
         {isAdmin && (
-          <button className="btn btn-primary" onClick={() => setCreateHackathonOpen(true)}>
-            <Zap className="w-4 h-4" />Create hackathon
+          <button className="btn btn-primary btn-lg" onClick={() => setCreateHackathonOpen(true)}>
+            <Zap className="w-4 h-4" />
+            Create hackathon
           </button>
         )}
       </div>
     );
   }
 
+  const statusColor =
+    activeHackathon.status === 'ACTIVE'
+      ? 'var(--green)'
+      : activeHackathon.status === 'ENDED'
+      ? 'var(--text-muted)'
+      : 'var(--yellow)';
+
   return (
     <div className="max-w-3xl mx-auto px-5 py-6">
-      <div className="flex items-start justify-between mb-6">
-        <div>
-          <h1 className="text-heading">{activeHackathon.name}</h1>
-          <p className="text-caption mt-1">{formatDate(activeHackathon.startDate)} → {formatDate(activeHackathon.endDate)} · {activeHackathon.venue || 'Online'}</p>
+
+      {/* Event header */}
+      <div className="mb-6">
+        <div className="flex items-start justify-between gap-3 mb-1">
+          <h1 className="text-heading flex-1 min-w-0 truncate">{activeHackathon.name}</h1>
+          <div
+            className="flex items-center gap-1.5 flex-shrink-0 px-3 py-1 rounded-full"
+            style={{
+              background: activeHackathon.status === 'ACTIVE' ? 'var(--green-dim)' : 'var(--bg-elevated)',
+              border: `1px solid ${activeHackathon.status === 'ACTIVE' ? 'rgba(0,232,122,0.25)' : 'var(--border-strong)'}`,
+            }}
+          >
+            <span
+              className="w-1.5 h-1.5 rounded-full"
+              style={{
+                background: statusColor,
+                boxShadow: activeHackathon.status === 'ACTIVE' ? '0 0 6px var(--green)' : 'none',
+              }}
+            />
+            <span
+              className="text-xs font-semibold uppercase tracking-widest"
+              style={{ color: statusColor, fontSize: 10 }}
+            >
+              {activeHackathon.status}
+            </span>
+          </div>
         </div>
-        <span className={cn('badge mt-1',
-          activeHackathon.status === 'ACTIVE' ? 'badge-checked_in' :
-          activeHackathon.status === 'ENDED' ? 'badge-ended' : 'badge-draft')}>
-          {activeHackathon.status}
-        </span>
+        <p className="text-caption">
+          {formatDate(activeHackathon.startDate)} → {formatDate(activeHackathon.endDate)}
+          {activeHackathon.venue && <> · {activeHackathon.venue}</>}
+        </p>
       </div>
 
-      {metricsLoading ? (
-        <div className="card p-5 mb-5">
-          <div className="skeleton h-4 w-32 mb-4 rounded" />
-          <div className="progress-bar mb-4" />
-          <div className="grid grid-cols-4 gap-3">{[...Array(4)].map((_, i) => <div key={i} className="skeleton h-8 rounded" />)}</div>
-        </div>
-      ) : metrics ? (
-        <div className="card p-5 mb-5">
-          <div className="flex items-center justify-between mb-1">
-            <p className="font-semibold" style={{ fontSize: 14 }}>Check-in progress</p>
-            <span className="font-bold" style={{ fontSize: 22, letterSpacing: '-0.02em' }}>{metrics.checkedInPercent}%</span>
+      {/* Primary stat — big check-in */}
+      <div
+        className="card mb-4 p-5 relative overflow-hidden"
+        style={{
+          background: 'linear-gradient(135deg, #111111 0%, #161616 100%)',
+          border: '1px solid var(--border-strong)',
+        }}
+      >
+        {/* Background glow */}
+        <div
+          className="absolute right-0 top-0 w-48 h-48 pointer-events-none"
+          style={{
+            background: 'radial-gradient(circle, rgba(0,232,122,0.06) 0%, transparent 70%)',
+          }}
+        />
+
+        <div className="flex items-center justify-between mb-4">
+          <div>
+            <p className="text-label mb-1">Check-in progress</p>
+            {metricsLoading ? (
+              <div className="skeleton w-20 h-10 rounded-lg" />
+            ) : (
+              <span className="metric-num" style={{ color: 'var(--green)' }}>
+                {metrics?.checkedInPercent ?? 0}%
+              </span>
+            )}
           </div>
-          <p className="text-caption mb-3">{metrics.checkedIn} of {metrics.totalTeams} teams checked in</p>
-          <div className="progress-bar mb-5"><div className="progress-fill" style={{ width: `${metrics.checkedInPercent}%` }} /></div>
+          {!metricsLoading && metrics && (
+            <div className="text-right">
+              <p className="text-label mb-1">Teams</p>
+              <p className="metric-num-sm text-white">
+                {metrics.checkedIn}
+                <span className="text-muted" style={{ fontSize: '0.6em', color: 'var(--text-muted)', fontWeight: 400 }}>
+                  /{metrics.totalTeams}
+                </span>
+              </p>
+            </div>
+          )}
+        </div>
+
+        {/* Progress bar */}
+        <div className="progress-track mb-5">
+          <div
+            className="progress-fill progress-fill-green"
+            style={{ width: `${metrics?.checkedInPercent ?? 0}%` }}
+          />
+        </div>
+
+        {/* Stats row */}
+        {metricsLoading ? (
           <div className="grid grid-cols-4 gap-3">
+            {[...Array(4)].map((_, i) => (
+              <div key={i} className="skeleton h-12 rounded-lg" />
+            ))}
+          </div>
+        ) : metrics ? (
+          <div className="grid grid-cols-4 gap-2">
             {[
               { label: 'Total', value: metrics.totalTeams, color: 'var(--text)' },
-              { label: 'Checked in', value: metrics.checkedIn, color: 'var(--success)' },
-              { label: 'Active', value: metrics.active, color: 'var(--warning)' },
-              { label: 'Submitted', value: metrics.submitted, color: 'var(--blue)' },
+              { label: 'In', value: metrics.checkedIn, color: 'var(--green)' },
+              { label: 'Active', value: metrics.active, color: 'var(--yellow)' },
+              { label: 'Done', value: metrics.submitted, color: 'var(--blue)' },
             ].map((s) => (
-              <div key={s.label} className="text-center">
-                <p className="font-bold" style={{ fontSize: 20, color: s.color }}>{s.value}</p>
-                <p className="text-caption" style={{ marginTop: 2 }}>{s.label}</p>
+              <div
+                key={s.label}
+                className="text-center py-2 px-1 rounded-xl"
+                style={{ background: 'rgba(255,255,255,0.03)' }}
+              >
+                <p
+                  className="font-display font-bold"
+                  style={{ fontSize: 22, color: s.color, letterSpacing: '-0.03em' }}
+                >
+                  {s.value}
+                </p>
+                <p className="text-caption mt-0.5">{s.label}</p>
               </div>
             ))}
           </div>
-        </div>
-      ) : null}
+        ) : null}
+      </div>
 
-      <div className="grid grid-cols-2 gap-3 mb-5">
-        <button onClick={() => navigate('/checkin')} className="card-hover p-4 text-left">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: 'var(--success-bg)' }}>
-            <UserCheck className="w-4 h-4" style={{ color: 'var(--success)' }} />
+      {/* Participants & Messages */}
+      {metrics && (
+        <div className="grid grid-cols-2 gap-3 mb-4">
+          <div className="card p-4">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+              style={{ background: 'var(--blue-dim)' }}
+            >
+              <Users className="w-4 h-4" style={{ color: 'var(--blue)' }} />
+            </div>
+            <p className="metric-num-sm" style={{ color: 'var(--blue)' }}>
+              {metrics.totalParticipants}
+            </p>
+            <p className="text-caption mt-1">Participants</p>
           </div>
-          <p className="font-semibold" style={{ fontSize: 14 }}>Check-in</p>
-          <p className="text-caption mt-0.5">{metrics?.missing ?? '–'} waiting</p>
-        </button>
-        <button onClick={() => navigate('/teams')} className="card-hover p-4 text-left">
-          <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: 'var(--blue-bg)' }}>
-            <Users className="w-4 h-4" style={{ color: 'var(--blue)' }} />
+          <div className="card p-4">
+            <div
+              className="w-8 h-8 rounded-lg flex items-center justify-center mb-3"
+              style={{ background: 'var(--purple-dim)' }}
+            >
+              <Activity className="w-4 h-4" style={{ color: 'var(--purple)' }} />
+            </div>
+            <p className="metric-num-sm" style={{ color: 'var(--purple)' }}>
+              {metrics.missing}
+            </p>
+            <p className="text-caption mt-1">Not checked in</p>
           </div>
-          <p className="font-semibold" style={{ fontSize: 14 }}>Teams</p>
-          <p className="text-caption mt-0.5">{metrics?.totalTeams ?? '–'} registered</p>
+        </div>
+      )}
+
+      {/* Action grid */}
+      <div className="grid grid-cols-2 gap-3 mb-6">
+        <button
+          onClick={() => navigate('/checkin')}
+          className="card-hover p-5 text-left"
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+            style={{ background: 'var(--green-dim)', border: '1px solid rgba(0,232,122,0.2)' }}
+          >
+            <UserCheck className="w-5 h-5" style={{ color: 'var(--green)' }} />
+          </div>
+          <p className="text-title" style={{ marginBottom: 4 }}>Check-in</p>
+          <p className="text-caption">{metrics?.missing ?? '–'} waiting</p>
         </button>
+
+        <button
+          onClick={() => navigate('/teams')}
+          className="card-hover p-5 text-left"
+        >
+          <div
+            className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+            style={{ background: 'var(--blue-dim)', border: '1px solid rgba(96,165,250,0.2)' }}
+          >
+            <Users className="w-5 h-5" style={{ color: 'var(--blue)' }} />
+          </div>
+          <p className="text-title" style={{ marginBottom: 4 }}>Teams</p>
+          <p className="text-caption">{metrics?.totalTeams ?? '–'} registered</p>
+        </button>
+
         {isAdmin && (
           <>
-            <button onClick={() => setBroadcastOpen(true)} className="card-hover p-4 text-left">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: 'var(--bg-muted)' }}>
-                <Send className="w-4 h-4" style={{ color: 'var(--text-secondary)' }} />
+            <button
+              onClick={() => setBroadcastOpen(true)}
+              className="card-hover p-5 text-left"
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: 'var(--orange-dim)', border: '1px solid rgba(251,146,60,0.2)' }}
+              >
+                <Send className="w-5 h-5" style={{ color: 'var(--orange)' }} />
               </div>
-              <p className="font-semibold" style={{ fontSize: 14 }}>Broadcast</p>
-              <p className="text-caption mt-0.5">Message all teams</p>
+              <p className="text-title" style={{ marginBottom: 4 }}>Broadcast</p>
+              <p className="text-caption">{metrics?.messagesToday ?? 0} today</p>
             </button>
-            <button onClick={() => setInviteOpen(true)} className="card-hover p-4 text-left">
-              <div className="w-8 h-8 rounded-lg flex items-center justify-center mb-3" style={{ background: 'var(--accent-light)' }}>
-                <Link2 className="w-4 h-4" style={{ color: 'var(--accent)' }} />
+
+            <button
+              onClick={() => setInviteOpen(true)}
+              className="card-hover p-5 text-left"
+            >
+              <div
+                className="w-10 h-10 rounded-xl flex items-center justify-center mb-4"
+                style={{ background: 'var(--purple-dim)', border: '1px solid rgba(167,139,250,0.2)' }}
+              >
+                <Link2 className="w-5 h-5" style={{ color: 'var(--purple)' }} />
               </div>
-              <p className="font-semibold" style={{ fontSize: 14 }}>Invite coordinators</p>
-              <p className="text-caption mt-0.5">Share invite link</p>
+              <p className="text-title" style={{ marginBottom: 4 }}>Invite</p>
+              <p className="text-caption">Add coordinators</p>
+            </button>
+
+            <button
+              onClick={() => setCreateHackathonOpen(true)}
+              className="card-hover p-5 text-left col-span-2"
+              style={{ border: '1px dashed var(--border-strong)' }}
+            >
+              <div className="flex items-center gap-3">
+                <div
+                  className="w-10 h-10 rounded-xl flex items-center justify-center flex-shrink-0"
+                  style={{ background: 'var(--bg-elevated)', border: '1px solid var(--border-strong)' }}
+                >
+                  <Zap className="w-5 h-5" style={{ color: 'var(--text-muted)' }} />
+                </div>
+                <div>
+                  <p className="text-title" style={{ marginBottom: 2 }}>New hackathon</p>
+                  <p className="text-caption">Create another event workspace</p>
+                </div>
+              </div>
             </button>
           </>
         )}
       </div>
 
+      {/* Recent check-ins */}
       {recentCheckins.length > 0 && (
         <div>
           <div className="flex items-center justify-between mb-3">
-            <p className="text-label flex items-center gap-1.5"><Clock className="w-3.5 h-3.5" />Recent check-ins</p>
-            <button onClick={() => navigate('/teams')} className="flex items-center gap-0.5 text-caption font-medium" style={{ color: 'var(--text-secondary)' }}>
+            <div className="flex items-center gap-2">
+              <Clock className="w-3.5 h-3.5" style={{ color: 'var(--text-muted)' }} />
+              <p className="text-label">Recent check-ins</p>
+            </div>
+            <button
+              onClick={() => navigate('/teams')}
+              className="flex items-center gap-1 text-caption press"
+              style={{ color: 'var(--text-secondary)' }}
+            >
               View all <ArrowUpRight className="w-3 h-3" />
             </button>
           </div>
+
           <div className="card overflow-hidden">
-            {recentCheckins.map((team) => (
-              <div key={team.id} className="table-row" onClick={() => navigate('/teams')}>
-                <div className="w-7 h-7 rounded-md flex items-center justify-center text-white font-bold flex-shrink-0" style={{ fontSize: 11, background: '#0A0A0A' }}>
+            {recentCheckins.map((team, i) => (
+              <button
+                key={team.id}
+                onClick={() => navigate('/teams')}
+                className="w-full flex items-center gap-3 px-4 py-3.5 text-left transition-colors duration-100 border-b last:border-0"
+                style={{ borderColor: 'var(--border)' }}
+                onMouseEnter={(e) => (e.currentTarget.style.background = 'var(--bg-elevated)')}
+                onMouseLeave={(e) => (e.currentTarget.style.background = 'transparent')}
+              >
+                <div
+                  className="avatar avatar-sm flex-shrink-0 font-display"
+                  style={{ background: 'var(--bg-elevated)', color: 'var(--text-secondary)' }}
+                >
                   {team.name[0]}
                 </div>
                 <div className="flex-1 min-w-0">
                   <p className="font-medium truncate" style={{ fontSize: 14 }}>{team.name}</p>
                   <p className="text-caption">{pluralize(team.participants.length, 'member')}</p>
                 </div>
-                <div className="flex items-center gap-2 flex-shrink-0">
-                  <span className={cn('badge', `badge-${team.status.toLowerCase()}`)}>{team.status.replace('_', ' ')}</span>
-                </div>
-              </div>
+                <span className={cn('badge', `badge-${team.status.toLowerCase()}`)}>
+                  {team.status.replace('_', ' ')}
+                </span>
+              </button>
             ))}
           </div>
         </div>

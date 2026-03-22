@@ -43,7 +43,8 @@ export const useHackathonStore = create<HackathonState>()(
           set({ hackathons, loading: false });
           const current = get().activeHackathon;
           if (!current && hackathons.length > 0) {
-            const active = hackathons.find((h) => h.status === 'ACTIVE') || hackathons[0];
+            const active =
+              hackathons.find((h) => h.status === 'ACTIVE') || hackathons[0];
             set({ activeHackathon: active });
           } else if (current) {
             const refreshed = hackathons.find((h) => h.id === current.id);
@@ -58,7 +59,10 @@ export const useHackathonStore = create<HackathonState>()(
 
       createHackathon: async (data) => {
         const h = await api.post<Hackathon>('/hackathons', data);
-        set((s) => ({ hackathons: [h, ...s.hackathons], activeHackathon: h }));
+        set((s) => ({
+          hackathons: [h, ...s.hackathons],
+          activeHackathon: h,
+        }));
         return h;
       },
 
@@ -66,7 +70,8 @@ export const useHackathonStore = create<HackathonState>()(
         const h = await api.patch<Hackathon>(`/hackathons/${id}`, data);
         set((s) => ({
           hackathons: s.hackathons.map((x) => (x.id === id ? h : x)),
-          activeHackathon: s.activeHackathon?.id === id ? h : s.activeHackathon,
+          activeHackathon:
+            s.activeHackathon?.id === id ? h : s.activeHackathon,
         }));
       },
 
@@ -74,7 +79,10 @@ export const useHackathonStore = create<HackathonState>()(
         await api.delete(`/hackathons/${id}`);
         set((s) => ({
           hackathons: s.hackathons.filter((h) => h.id !== id),
-          activeHackathon: s.activeHackathon?.id === id ? s.hackathons.find((h) => h.id !== id) || null : s.activeHackathon,
+          activeHackathon:
+            s.activeHackathon?.id === id
+              ? s.hackathons.find((h) => h.id !== id) ?? null
+              : s.activeHackathon,
         }));
       },
     }),

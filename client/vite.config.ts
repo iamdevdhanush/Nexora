@@ -13,8 +13,8 @@ export default defineConfig({
         name: 'Nexora',
         short_name: 'Nexora',
         description: 'Premium Hackathon Operations Platform',
-        theme_color: '#0A0A0A',
-        background_color: '#FFFFFF',
+        theme_color: '#090909',
+        background_color: '#090909',
         display: 'standalone',
         orientation: 'portrait',
         scope: '/',
@@ -24,7 +24,9 @@ export default defineConfig({
           { src: '/icons/icon-512.png', sizes: '512x512', type: 'image/png', purpose: 'any maskable' },
         ],
       },
-      workbox: { globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'] },
+      workbox: {
+        globPatterns: ['**/*.{js,css,html,ico,png,svg,woff2}'],
+      },
     }),
   ],
   resolve: {

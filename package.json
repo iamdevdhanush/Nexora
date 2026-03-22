@@ -8,8 +8,14 @@
     "db:setup": "cd server && npm run db:generate && npm run db:push && npm run db:seed && cd ..",
     "build": "npm run build --workspace=client && npm run build --workspace=server"
   },
-  "workspaces": ["client", "server"],
+  "workspaces": [
+    "client",
+    "server"
+  ],
   "devDependencies": {
     "concurrently": "^8.2.2"
+  },
+  "dependencies": {
+    "zustand": "^5.0.12"
   }
 }
