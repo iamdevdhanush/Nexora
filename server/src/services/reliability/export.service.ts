@@ -111,7 +111,7 @@ export async function exportRoomsCsv(hackathonId: string): Promise<string> {
     Name: r.name,
     Building: r.building || '',
     Floor: r.floor || '',
-    Capacity: r.capacity,
+    Capacity: r.capacityTeams ?? r.capacityPeople ?? 30,
     Status: r.status,
     'Teams Assigned': countMap.get(r.name) || 0,
   }));
@@ -230,7 +230,7 @@ export async function generateEmergencyPack(hackathonId: string) {
         name: r.name,
         building: r.building,
         floor: r.floor,
-        capacity: r.capacity,
+        capacity: r.capacityTeams ?? r.capacityPeople ?? 30,
         teamsAssigned: countMap.get(r.name) || 0,
       })),
     },

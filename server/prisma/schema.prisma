@@ -185,6 +185,8 @@ model InviteLink {
   usedBy      String?
   approved    Boolean   @default(true)
   createdAt   DateTime  @default(now())
+
+  @@index([hackathonId])
 }
 
 model Hackathon {
@@ -257,6 +259,8 @@ model Registration {
 
   hackathon   Hackathon @relation(fields: [hackathonId], references: [id], onDelete: Cascade)
   hackathonId String
+
+  @@index([hackathonId])
 }
 
 model Room {
@@ -268,7 +272,6 @@ model Room {
   floor     String?
   capacityTeams  Int?
   capacityPeople Int?
-  capacity  Int        @default(30)
   notes     String?
   sortOrder Int        @default(0)
   status    RoomStatus @default(AVAILABLE)
@@ -308,6 +311,9 @@ model Automation {
 
   createdBy   User  @relation(fields: [createdById], references: [id])
   createdById String
+
+  @@index([hackathonId])
+  @@index([createdById])
 }
 
 model EmailCampaign {
@@ -380,6 +386,8 @@ model EventMilestone {
   hackathonId String
 
   createdAt DateTime @default(now())
+
+  @@index([hackathonId])
 }
 
 model CoordinatorAssignment {
@@ -405,6 +413,8 @@ model ProblemStatement {
   hackathonId String
   teams       Team[]    @relation("TeamProblem")
   createdAt   DateTime  @default(now())
+
+  @@index([hackathonId])
 }
 
 model Team {
@@ -468,6 +478,8 @@ model Participant {
   teamId String
 
   deletedBy User? @relation("ParticipantDeletion", fields: [deletedById], references: [id])
+
+  @@index([teamId])
 }
 
 model ScoringCriteria {
@@ -509,6 +521,8 @@ model Message {
   sentById String
 
   recipients MessageRecipient[]
+
+  @@index([hackathonId])
 }
 
 model MessageRecipient {
@@ -522,6 +536,9 @@ model MessageRecipient {
 
   team   Team   @relation(fields: [teamId], references: [id])
   teamId String
+
+  @@index([messageId])
+  @@index([teamId])
 }
 
 model Certificate {
@@ -542,6 +559,8 @@ model Certificate {
 
   team   Team   @relation(fields: [teamId], references: [id])
   teamId String
+
+  @@index([hackathonId])
 }
 
 model ImportBatch {
@@ -590,6 +609,8 @@ model ActivityLog {
 
   actor   User   @relation(fields: [actorId], references: [id])
   actorId String
+
+  @@index([hackathonId])
 }
 
 model HackathonSnapshot {
