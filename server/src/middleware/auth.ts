@@ -1,13 +1,13 @@
 import { Request, Response, NextFunction } from 'express';
-import jwt from 'jsonwebtoken';
+import jwt, { type Algorithm } from 'jsonwebtoken';
 import { prisma } from '../lib/prisma';
 import { requireSuperAdmin, requireSubAdmin, requirePermission, requireRole } from './permissions';
 import type { Permission } from './permissions';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
 
-const JWT_ALGORITHM = 'HS256';
-const ALLOWED_ALGORITHMS = ['HS256'];
+const JWT_ALGORITHM: Algorithm = 'HS256';
+const ALLOWED_ALGORITHMS: Algorithm[] = ['HS256'];
 
 export interface TokenPayload {
   sub: string;
@@ -30,7 +30,7 @@ export function signToken(payload: { id: string; role: string }, expiresIn: stri
   return jwt.sign(
     { sub: payload.id, role: payload.role },
     JWT_SECRET,
-    { algorithm: JWT_ALGORITHM, expiresIn },
+    { algorithm: JWT_ALGORITHM, expiresIn: expiresIn as any },
   );
 }
 
@@ -43,7 +43,7 @@ export const authenticate = (req: AuthRequest, res: Response, next: NextFunction
 
   let decoded: TokenPayload;
   try {
-    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ALLOWED_ALGORITHMS }) as TokenPayload;
+    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ALLOWED_ALGORITHMS }) as unknown as TokenPayload;
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }
@@ -66,7 +66,7 @@ export const authenticateAndFetch = async (req: AuthRequest, res: Response, next
 
   let decoded: TokenPayload;
   try {
-    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ALLOWED_ALGORITHMS }) as TokenPayload;
+    decoded = jwt.verify(token, JWT_SECRET, { algorithms: ALLOWED_ALGORITHMS }) as unknown as TokenPayload;
   } catch {
     return res.status(401).json({ error: 'Invalid or expired token' });
   }

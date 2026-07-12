@@ -6,7 +6,7 @@ describe('Password Service', () => {
     it('should hash a password', () => {
       const hash = hashPassword('my-strong-password-123');
       expect(hash).toBeDefined();
-      expect(hash).toContain('$2a$');
+      expect(hash).toContain('$2b$');
       expect(hash.length).toBeGreaterThan(50);
     });
 

@@ -39,7 +39,7 @@ describe('Auth Route Logic', () => {
       const user = await prisma.user.findUnique({ where: { email: TEST_USER_EMAIL } });
       expect(user).toBeDefined();
       expect(user!.passwordHash).toBeDefined();
-      expect(user!.passwordHash!.startsWith('$2a$')).toBe(true);
+      expect(user!.passwordHash!.startsWith('$2b$')).toBe(true);
 
       const valid = bcrypt.compareSync(TEST_USER_PASSWORD, user!.passwordHash!);
       expect(valid).toBe(true);

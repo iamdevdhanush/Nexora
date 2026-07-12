@@ -1,10 +1,10 @@
 import { Server, Socket } from 'socket.io';
-import jwt from 'jsonwebtoken';
+import jwt, { type Algorithm } from 'jsonwebtoken';
 import { prisma } from './prisma';
 import { logger } from './logger';
 
 const JWT_SECRET = process.env.JWT_SECRET!;
-const ALLOWED_ALGORITHMS = ['HS256'];
+const ALLOWED_ALGORITHMS: Algorithm[] = ['HS256'];
 
 interface AuthenticatedSocket extends Socket {
   user?: {
