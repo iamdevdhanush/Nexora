@@ -1,12 +1,12 @@
 import { Router } from 'express';
 import { z } from 'zod';
 import { prisma } from '../lib/prisma';
-import { authenticate, requireSuperAdmin, AuthRequest } from '../middleware/auth';
+import { authenticate, authenticateAndFetch, requireSuperAdmin, AuthRequest } from '../middleware/auth';
 import { hashPassword } from '../services/password.service';
 import { logger } from '../lib/logger';
 
 export const adminRouter = Router({ mergeParams: true });
-adminRouter.use(authenticate);
+adminRouter.use(authenticateAndFetch);
 
 const ADMIN_SAFE_SELECT = {
   id: true, name: true, email: true, phone: true, role: true,
@@ -223,6 +223,14 @@ adminRouter.post('/:adminId/set-password', requireSuperAdmin, async (req: AuthRe
       where: { id: req.params.adminId },
       data: { passwordHash, passwordChangedAt: new Date() },
     });
+
+    await prisma.activityLog.create({
+      data: {
+        action: `Password set for Sub Admin "${targetUser.name}" by ${req.user!.name}`,
+        hackathonId: 'unknown',
+        actorId: req.user!.id,
+      },
+    }).catch(() => {});
 
     logger.info(`[ADMIN] Password set for Sub Admin: ${targetUser.email} by ${req.user!.name}`);
     res.json({ success: true, message: 'Password has been set for this Sub Admin.' });

@@ -90,7 +90,7 @@ authRouter.post('/login', async (req, res) => {
   }
 });
 
-authRouter.get('/me', authenticate, async (req: AuthRequest, res) => {
+authRouter.get('/me', authenticateAndFetch, async (req: AuthRequest, res) => {
   try {
     const user = await prisma.user.findUnique({
       where: { id: req.user!.id },
@@ -114,7 +114,7 @@ authRouter.get('/me', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-authRouter.patch('/me', authenticate, async (req: AuthRequest, res) => {
+authRouter.patch('/me', authenticateAndFetch, async (req: AuthRequest, res) => {
   const schema = z.object({
     name: z.string().min(1).max(100).optional(),
   });
@@ -141,7 +141,7 @@ authRouter.patch('/me', authenticate, async (req: AuthRequest, res) => {
   }
 });
 
-authRouter.post('/change-password', authenticate, async (req: AuthRequest, res) => {
+authRouter.post('/change-password', authenticateAndFetch, async (req: AuthRequest, res) => {
   const schema = z.object({
     currentPassword: z.string().min(1),
     newPassword: z.string().min(1),
