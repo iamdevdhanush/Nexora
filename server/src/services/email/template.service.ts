@@ -85,6 +85,14 @@ function isSafeScheme(url: string): boolean {
   return !UNSAFE_PATTERN.test(url);
 }
 
+function stripUnsafeScheme(url: string): string {
+  if (UNSAFE_PATTERN.test(url)) {
+    const stripped = url.replace(UNSAFE_PATTERN, '');
+    return stripUnsafeScheme(stripped);
+  }
+  return url;
+}
+
 export function sanitizeHtml(html: string): string {
   let cleaned = html
     .replace(/<script[\s\S]*?<\/script\s*>/gi, '')
@@ -93,17 +101,19 @@ export function sanitizeHtml(html: string): string {
   cleaned = cleaned.replace(/<(\w+)([^>]*)>/gi, (full, tagName: string, attrs: string) => {
     const tag = tagName.toLowerCase();
     if (!SAFE_TAGS.has(tag)) return '';
-    const safeAttrs = attrs.replace(/(\w+)\s*=\s*(?:"[^"]*"|'[^']*'|\S+)/gi, (attrFull, attrName: string) => {
+    const safeAttrs = attrs.replace(/(\s*)(\w+)\s*=\s*(?:"[^"]*"|'[^']*'|\S+)/gi, (full, ws: string, attrName: string) => {
       const attr = attrName.toLowerCase();
       if (attr.startsWith('on')) return '';
       if (!SAFE_ATTRS.has(attr)) return '';
-      const valMatch = attrFull.match(/=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/);
+      const valMatch = full.match(/=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/);
       if (!valMatch) return '';
-      const val = valMatch[1] || valMatch[2] || valMatch[3] || '';
+      let val = valMatch[1] || valMatch[2] || valMatch[3] || '';
       if (attr === 'href' || attr === 'src') {
-        if (!isSafeScheme(val.trim())) return '';
+        if (!isSafeScheme(val.trim())) {
+          val = stripUnsafeScheme(val);
+        }
       }
-      return ` ${attr}="${val.replace(/"/g, '&quot;')}"`;
+      return `${ws}${attr}="${val.replace(/"/g, '&quot;')}"`;
     });
     return `<${tag}${safeAttrs}>`;
   });
