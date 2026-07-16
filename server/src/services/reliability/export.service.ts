@@ -8,20 +8,21 @@ export interface CsvRow {
   [key: string]: string | number | boolean | null;
 }
 
+function csvEscape(val: unknown): string {
+  if (val === null || val === undefined) return '';
+  const s = String(val);
+  const needsQuoting = s.includes(',') || s.includes('"') || s.includes('\n') ||
+    s.startsWith('=') || s.startsWith('+') || s.startsWith('-') || s.startsWith('@') || s.startsWith('\t') || s.startsWith('\r');
+  if (needsQuoting) return `"${s.replace(/"/g, '""')}"`;
+  return s;
+}
+
 function toCsv(rows: CsvRow[]): string {
   if (rows.length === 0) return '';
   const headers = Object.keys(rows[0]);
   const lines = [headers.join(',')];
   for (const row of rows) {
-    const vals = headers.map(h => {
-      const v = row[h];
-      if (v === null || v === undefined) return '';
-      const s = String(v);
-      if (s.includes(',') || s.includes('"') || s.includes('\n')) {
-        return `"${s.replace(/"/g, '""')}"`;
-      }
-      return s;
-    });
+    const vals = headers.map(h => csvEscape(row[h]));
     lines.push(vals.join(','));
   }
   return lines.join('\n');

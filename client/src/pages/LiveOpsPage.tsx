@@ -54,7 +54,7 @@ export function LiveOpsPage() {
       }
     };
     fetch();
-  }, [activeHackathon]);
+  }, [activeHackathon?.id]);
 
   if (!activeHackathon) {
     return (

@@ -2,7 +2,7 @@ import { prisma } from '../../lib/prisma';
 import { launchCampaign } from './campaign.service';
 import { logger } from '../../lib/logger';
 
-const SCHEDULER_INTERVAL = parseInt(process.env.EMAIL_SCHEDULER_INTERVAL || '15000', 15);
+const SCHEDULER_INTERVAL = parseInt(process.env.EMAIL_SCHEDULER_INTERVAL || '15000', 10);
 
 let schedulerTimer: ReturnType<typeof setInterval> | null = null;
 

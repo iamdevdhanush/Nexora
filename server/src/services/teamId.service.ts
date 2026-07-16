@@ -1,4 +1,7 @@
+import { randomBytes } from 'crypto';
 import { prisma } from '../lib/prisma';
+
+const MAX_RETRIES = 10;
 
 export async function generateTeamId(hackathonId: string): Promise<string> {
   const hackathon = await prisma.hackathon.findUnique({
@@ -13,37 +16,39 @@ export async function generateTeamId(hackathonId: string): Promise<string> {
     .slice(0, 4)
     .toUpperCase();
 
-  const lastTeam = await prisma.team.findFirst({
-    where: { hackathonId, teamId: { startsWith: `NEX-${code}-` } },
-    orderBy: { teamId: 'desc' },
-    select: { teamId: true },
-  });
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const lastTeam = await prisma.team.findFirst({
+      where: { hackathonId, teamId: { startsWith: `NEX-${code}-` } },
+      orderBy: { teamId: 'desc' },
+      select: { teamId: true },
+    });
 
-  let nextNum = 1;
-  if (lastTeam?.teamId) {
-    const parts = lastTeam.teamId.split('-');
-    const lastNum = parseInt(parts[parts.length - 1], 10);
-    if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    let nextNum = 1;
+    if (lastTeam?.teamId) {
+      const parts = lastTeam.teamId.split('-');
+      const lastNum = parseInt(parts[parts.length - 1], 10);
+      if (!isNaN(lastNum)) nextNum = lastNum + 1;
+    }
+
+    // Add jitter for concurrent calls by adding attempt offset
+    nextNum += attempt;
+
+    const teamId = `NEX-${code}-${String(nextNum).padStart(3, '0')}`;
+
+    const existing = await prisma.team.findUnique({ where: { teamId } });
+    if (!existing) return teamId;
   }
 
-  const teamId = `NEX-${code}-${String(nextNum).padStart(3, '0')}`;
-
-  const existing = await prisma.team.findUnique({ where: { teamId } });
-  if (existing) {
-    return generateTeamId(hackathonId);
-  }
-
-  return teamId;
+  throw new Error('Failed to generate unique team ID after maximum retries');
 }
 
 export async function generateQrToken(): Promise<string> {
-  const { randomUUID, randomBytes } = await import('crypto');
-  const token = `qr-${randomBytes(16).toString('hex')}`;
-
-  const existing = await prisma.team.findUnique({ where: { qrToken: token } });
-  if (existing) return generateQrToken();
-
-  return token;
+  for (let attempt = 0; attempt < MAX_RETRIES; attempt++) {
+    const token = `qr-${randomBytes(16).toString('hex')}`;
+    const existing = await prisma.team.findUnique({ where: { qrToken: token } });
+    if (!existing) return token;
+  }
+  throw new Error('Failed to generate unique QR token after maximum retries');
 }
 
 export function generateRegistrationId(slug: string, sequence: number): string {

@@ -63,18 +63,52 @@ export function hasUnresolvedVariables(rendered: string): boolean {
   return VARIABLE_PATTERN.test(rendered);
 }
 
+const SAFE_TAGS = new Set([
+  'a', 'abbr', 'b', 'blockquote', 'br', 'code', 'dd', 'del', 'details', 'dfn',
+  'div', 'dl', 'dt', 'em', 'figcaption', 'figure', 'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+  'hr', 'i', 'img', 'ins', 'kbd', 'li', 'mark', 'ol', 'p', 'pre', 'q', 's',
+  'samp', 'small', 'span', 'strong', 'sub', 'summary', 'sup', 'table', 'tbody',
+  'td', 'tfoot', 'th', 'thead', 'time', 'tr', 'u', 'ul', 'var',
+]);
+const SAFE_ATTRS = new Set([
+  'align', 'alt', 'cite', 'colspan', 'datetime', 'height', 'href', 'hreflang',
+  'id', 'rel', 'rowspan', 'scope', 'src', 'style', 'target', 'title', 'type', 'width',
+]);
+const UNSAFE_PATTERN = /^(j\s*a\s*v\s*a\s*s\s*c\s*r\s*i\s*p\s*t\s*|d\s*a\s*t\s*a\s*|v\s*b\s*s\s*c\s*r\s*i\s*p\s*t\s*):/i;
+const SAFE_SCHEMES = ['http://', 'https://', 'mailto:', 'tel:'];
+
+function isSafeScheme(url: string): boolean {
+  if (url.startsWith('/') || url.startsWith('#')) return true;
+  for (const scheme of SAFE_SCHEMES) {
+    if (url.toLowerCase().startsWith(scheme)) return true;
+  }
+  return !UNSAFE_PATTERN.test(url);
+}
+
 export function sanitizeHtml(html: string): string {
-  return html
-    .replace(/<script\b[^<]*(?:(?!<\/script>)<[^<]*)*<\/script>/gi, '')
-    .replace(/on\w+\s*=\s*"[^"]*"/gi, '')
-    .replace(/on\w+\s*=\s*'[^']*'/gi, '')
-    .replace(/on\w+\s*=\s*\w+/gi, '')
-    .replace(/javascript\s*:/gi, '')
-    .replace(/<iframe\b[^>]*\/?>/gi, '')
-    .replace(/<\/iframe>/gi, '')
-    .replace(/<embed\b[^>]*\/?>/gi, '')
-    .replace(/<object\b[^>]*\/?>/gi, '')
-    .replace(/<\/object>/gi, '');
+  let cleaned = html
+    .replace(/<script[\s\S]*?<\/script\s*>/gi, '')
+    .replace(/<\/?(?:script|iframe|embed|object|style|meta|link|base|form|input|button|textarea|select|option|optgroup|fieldset|legend|label|noscript|canvas|svg|math|xml|frame|frameset|noframes|ilayer|layer|bgsound|audio|video|source|track|applet|marquee)[^>]*\/?>/gi, '');
+
+  cleaned = cleaned.replace(/<(\w+)([^>]*)>/gi, (full, tagName: string, attrs: string) => {
+    const tag = tagName.toLowerCase();
+    if (!SAFE_TAGS.has(tag)) return '';
+    const safeAttrs = attrs.replace(/(\w+)\s*=\s*(?:"[^"]*"|'[^']*'|\S+)/gi, (attrFull, attrName: string) => {
+      const attr = attrName.toLowerCase();
+      if (attr.startsWith('on')) return '';
+      if (!SAFE_ATTRS.has(attr)) return '';
+      const valMatch = attrFull.match(/=\s*(?:"([^"]*)"|'([^']*)'|(\S+))/);
+      if (!valMatch) return '';
+      const val = valMatch[1] || valMatch[2] || valMatch[3] || '';
+      if (attr === 'href' || attr === 'src') {
+        if (!isSafeScheme(val.trim())) return '';
+      }
+      return ` ${attr}="${val.replace(/"/g, '&quot;')}"`;
+    });
+    return `<${tag}${safeAttrs}>`;
+  });
+
+  return cleaned;
 }
 
 export const BUILTIN_TEMPLATES = [

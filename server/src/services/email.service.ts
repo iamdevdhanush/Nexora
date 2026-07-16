@@ -1,7 +1,21 @@
 import fs from 'fs';
+import { Resend } from 'resend';
 import { logger } from '../lib/logger';
 
 const FROM_ADDRESS = process.env.SMTP_FROM || 'Nexora <noreply@nexora.dev>';
+
+let resendClient: Resend | null = null;
+
+function getResendClient(): Resend {
+  if (!resendClient) {
+    resendClient = new Resend(process.env.RESEND_API_KEY || '');
+  }
+  return resendClient;
+}
+
+function escapeHtml(s: string): string {
+  return s.replace(/&/g, '&amp;').replace(/</g, '&lt;').replace(/>/g, '&gt;').replace(/"/g, '&quot;').replace(/'/g, '&#039;');
+}
 
 export interface EmailResult {
   success: boolean;
@@ -22,22 +36,23 @@ export async function sendCertificateEmail(
     return { success: true, skipped: true };
   }
 
-  const { Resend } = await import('resend');
-  const resend = new Resend(apiKey);
-
   try {
     const pdfBuffer = fs.readFileSync(pdfPath);
     const typeLabel = certificateType
       .toLowerCase()
       .replace(/_/g, ' ');
 
-    await resend.emails.send({
+    const safeName = escapeHtml(participantName);
+    const safeLabel = escapeHtml(typeLabel);
+    const safeId = escapeHtml(certificateId);
+
+    await getResendClient().emails.send({
       from: FROM_ADDRESS,
       to,
       subject: `Your ${typeLabel} certificate`,
-      html: `<p>Dear ${participantName},</p>
-<p>Please find your ${typeLabel} certificate attached.</p>
-<p>Certificate ID: <code>${certificateId}</code></p>
+      html: `<p>Dear ${safeName},</p>
+<p>Please find your ${safeLabel} certificate attached.</p>
+<p>Certificate ID: <code>${safeId}</code></p>
 <p>You can verify this certificate by scanning the QR code on the PDF.</p>`,
       attachments: [
         { filename: `${certificateId}.pdf`, content: pdfBuffer },
@@ -45,7 +60,8 @@ export async function sendCertificateEmail(
     });
 
     return { success: true };
-  } catch (err: any) {
-    return { success: false, error: err.message };
+  } catch (err: unknown) {
+    const message = err instanceof Error ? err.message : 'Unknown email error';
+    return { success: false, error: message };
   }
 }
