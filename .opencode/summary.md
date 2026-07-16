@@ -26,6 +26,7 @@ Build Nexora's Venue Operations, Room Management & Print Center (Feature 4): fle
 - **Database indexes**: `Team.roomId` indexed, `CapacityOverride.roomId` and `.hackathonId` indexed
 - **Tests**: 52 tests across 10 test files — all passing (34 existing + 18 new venue tests)
 
+
 ## Remaining
 - Full regression test (Phase 22)
 - Verify Print Center PDFs render correctly (requires Puppeteer + browser)

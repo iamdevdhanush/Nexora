@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach } from 'vitest';
+import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest';
 
 const mockPrisma = vi.hoisted(() => ({
   hackathon: { findUnique: vi.fn() },
@@ -54,9 +54,9 @@ describe('Integrity Service', () => {
 
       const result = await svc.checkIntegrity('hack-1');
 
-      expect(result.summary.totalTeams).toBe(2);
-      expect(result.summary.totalParticipants).toBe(3);
-      expect(result.summary.totalScores).toBe(1);
+      expect(result.summary?.totalTeams).toBe(2);
+      expect(result.summary?.totalParticipants).toBe(3);
+      expect(result.summary?.totalScores).toBe(1);
       expect(result.issues).toBeDefined();
     });
 
@@ -75,7 +75,7 @@ describe('Integrity Service', () => {
 
       const result = await svc.checkIntegrity('hack-1');
 
-      expect(result.summary.totalTeams).toBe(0);
+      expect(result.summary?.totalTeams).toBe(0);
       expect(result.issues).toEqual([]);
     });
   });

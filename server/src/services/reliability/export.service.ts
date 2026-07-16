@@ -1,4 +1,5 @@
 import { prisma } from '../../lib/prisma';
+// @ts-expect-error archiver has no types
 import archiver from 'archiver';
 import crypto from 'crypto';
 import { Readable } from 'stream';
