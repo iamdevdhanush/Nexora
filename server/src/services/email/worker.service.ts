@@ -4,7 +4,13 @@ import type { EmailProvider } from './provider';
 import { renderTemplate, type TemplateContext } from './template.service';
 import { logger } from '../../lib/logger';
 import { emitToHackathon } from '../../lib/socket';
-import { io } from '../../index';
+import type { Server as SocketServer } from 'socket.io';
+
+let io: SocketServer | null = null;
+
+export function setWorkerIo(server: SocketServer): void {
+  io = server;
+}
 
 const BATCH_SIZE = parseInt(process.env.EMAIL_BATCH_SIZE || '20', 10);
 const WORKER_INTERVAL = parseInt(process.env.EMAIL_WORKER_INTERVAL || '3000', 10);
@@ -27,11 +33,13 @@ function classifyError(error: string): 'temporary' | 'permanent' {
   const temporaryPatterns = [
     'rate limit', 'timeout', 'too many requests', 'service unavailable',
     'temporarily', 'try again', 'connection', 'network', 'econnrefused',
-    'econnreset', 'etimedout', '5', 'internal server error',
+    'econnreset', 'etimedout', 'internal server error', 'bad gateway',
+    'service unavailable', 'gateway timeout', 'too many connections',
   ];
   for (const pattern of temporaryPatterns) {
     if (lower.includes(pattern)) return 'temporary';
   }
+  if (/^5\d{2}\b/.test(lower.trim())) return 'temporary';
   return 'permanent';
 }
 
@@ -169,6 +177,7 @@ async function updateCampaignCounts(campaignId: string): Promise<void> {
 }
 
 function emitProgress(hackathonId: string, campaignId: string): void {
+  if (!io) return;
   try {
     emitToHackathon(io, hackathonId, 'campaign:progress', { campaignId });
   } catch {

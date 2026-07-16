@@ -95,7 +95,7 @@ export function EmailCampaignDetailPage() {
     const handler = () => fetchDetail();
     socket.on('campaign:progress', handler);
     return () => { socket.off('campaign:progress', handler); };
-  }, [activeHackathon?.id]);
+  }, [activeHackathon?.id, fetchDetail]);
 
   const handleAction = async (action: 'send-now' | 'cancel') => {
     if (!activeHackathon || !id) return;

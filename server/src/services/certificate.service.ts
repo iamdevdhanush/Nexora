@@ -89,10 +89,11 @@ export async function generateCertificates(
           });
           result.failed++;
         }
-      } catch (err: any) {
+      } catch (err: unknown) {
+        const errorMessage = err instanceof Error ? err.message : 'Unknown error';
         await prisma.certificate.update({
           where: { id: certId },
-          data: { status: 'FAILED', errorMessage: err.message },
+          data: { status: 'FAILED', errorMessage },
         });
         result.failed++;
       }

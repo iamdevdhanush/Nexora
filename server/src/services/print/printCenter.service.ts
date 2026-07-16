@@ -1,6 +1,7 @@
 import { prisma } from '../../lib/prisma';
 import { logger } from '../../lib/logger';
 import * as XLSX from 'xlsx';
+import QRCode from 'qrcode';
 
 function escapeCsv(val: string | number | boolean | null | undefined): string {
   if (val === null || val === undefined) return '';
@@ -183,8 +184,8 @@ export async function generateTeamDeskCardsPdf(hackathonId: string): Promise<Buf
   ]);
 
   const cards = teams.map(t => {
-    const qrDataUrl = t.qrToken ? `https://api.qrserver.com/v1/create-qr-code/?size=100x100&data=${encodeURIComponent(t.qrToken)}` : '';
-    return `<div class="desk-card"><div class="team-name">${escapeHtml(t.name)}</div><div>${escapeHtml(t.teamId || '')}</div><div>${escapeHtml(t.room || '-')}</div>${qrDataUrl ? `<div class="qr"><img src="${qrDataUrl}" width="60" height="60" /></div>` : ''}</div>`;
+    const qrSrc = t.qrToken ? `data:image/png;base64,${QRCode.toDataURL(t.qrToken, { width: 100, margin: 1 }).replace(/^data:image\/png;base64,/, '')}` : '';
+    return `<div class="desk-card"><div class="team-name">${escapeHtml(t.name)}</div><div>${escapeHtml(t.teamId || '')}</div><div>${escapeHtml(t.room || '-')}</div>${qrSrc ? `<div class="qr"><img src="${qrSrc}" width="60" height="60" /></div>` : ''}</div>`;
   }).join('');
 
   const html = wrapHtml('Team Desk Cards', hackathon?.name || 'Hackathon', [`<div>${cards}</div>`]);
@@ -202,8 +203,8 @@ export async function generateParticipantBadgesPdf(hackathonId: string): Promise
   ]);
 
   const badges = participants.map(p => {
-    const qrDataUrl = p.team.qrToken ? `https://api.qrserver.com/v1/create-qr-code/?size=80x80&data=${encodeURIComponent(p.team.qrToken)}` : '';
-    return `<div class="badge"><div class="name">${escapeHtml(p.name)}</div><div>${escapeHtml(p.team.name)}</div><div>${escapeHtml(p.team.teamId || '')}</div><div style="font-size:7px;color:#888;">${escapeHtml(hackathon?.name || '')}</div>${qrDataUrl ? `<div style="margin-top:3px;"><img src="${qrDataUrl}" width="40" height="40" /></div>` : ''}</div>`;
+    const qrSrc = p.team.qrToken ? `data:image/png;base64,${QRCode.toDataURL(p.team.qrToken, { width: 80, margin: 1 }).replace(/^data:image\/png;base64,/, '')}` : '';
+    return `<div class="badge"><div class="name">${escapeHtml(p.name)}</div><div>${escapeHtml(p.team.name)}</div><div>${escapeHtml(p.team.teamId || '')}</div><div style="font-size:7px;color:#888;">${escapeHtml(hackathon?.name || '')}</div>${qrSrc ? `<div style="margin-top:3px;"><img src="${qrSrc}" width="40" height="40" /></div>` : ''}</div>`;
   }).join('');
 
   const html = wrapHtml('Participant Badges', hackathon?.name || 'Hackathon', [`<div>${badges}</div>`]);

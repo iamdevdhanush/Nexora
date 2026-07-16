@@ -27,7 +27,7 @@ import { printRouter } from './routes/print';
 import { errorHandler } from './middleware/errorHandler';
 import { apiLimiter, authLimiter, passwordSetupLimiter } from './middleware/rateLimiter';
 import { setupSocketHandlers } from './lib/socket';
-import { startEmailWorker } from './services/email/worker.service';
+import { startEmailWorker, setWorkerIo } from './services/email/worker.service';
 import { startScheduler } from './services/email/scheduler.service';
 import { startSnapshotScheduler } from './services/reliability/snapshotScheduler.service';
 import { logger } from './lib/logger';
@@ -140,6 +140,7 @@ app.use(errorHandler);
 
 setupSocketHandlers(io);
 
+setWorkerIo(io);
 startEmailWorker();
 startScheduler();
 startSnapshotScheduler();

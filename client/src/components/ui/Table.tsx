@@ -1,5 +1,5 @@
 import { ChevronUp, ChevronDown, ChevronsUpDown, Search, X } from 'lucide-react';
-import { useState, useMemo, ReactNode } from 'react';
+import { useState, useMemo, useEffect, ReactNode } from 'react';
 
 export interface Column<T> {
   key: string;
@@ -75,7 +75,9 @@ export function Table<T extends Record<string, any>>({
   const totalPages = Math.max(1, Math.ceil(filtered.length / pageSize));
   const paginated = filtered.slice(page * pageSize, (page + 1) * pageSize);
 
-  if (page >= totalPages) setPage(Math.max(0, totalPages - 1));
+  useEffect(() => {
+    if (page >= totalPages) setPage(Math.max(0, totalPages - 1));
+  }, [page, totalPages]);
 
   if (loading) {
     return (

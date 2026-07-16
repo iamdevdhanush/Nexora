@@ -94,7 +94,6 @@ export function HackathonDashboardPage() {
       }
     } catch (e: any) {
       if (e.status === 400 && e.message.includes('Type-to-confirm')) {
-        const impact = deleteImpact;
         setDeleteError(`Type HACKATHON-${hackathon.name.toUpperCase().replace(/\s+/g, '-').slice(0, 40)} to confirm`);
       } else {
         toast(e.message, 'error');
