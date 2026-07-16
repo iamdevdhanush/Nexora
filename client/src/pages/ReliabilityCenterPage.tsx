@@ -6,8 +6,8 @@ import { api } from '@/lib/api';
 import {
   Shield, RefreshCw, Database, Download, FileText, Archive,
   RotateCcw, AlertTriangle, CheckCircle2, XCircle, Clock,
-  Trash2, Upload, Users, Loader2, ChevronDown, ChevronRight,
-  Search, Eye, Mail, HardDrive, Activity, Server, DoorOpen,
+  Trash2, Users, Loader2, ChevronDown, ChevronRight,
+  Search, Eye, HardDrive, Activity, Server, DoorOpen,
 } from 'lucide-react';
 import { cn, formatDateTime } from '@/lib/utils';
 

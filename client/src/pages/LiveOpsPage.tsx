@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { api } from '@/lib/api';
-import { Radio, Users, DoorOpen, UserCheck, Clock, Activity, TrendingUp } from 'lucide-react';
+import { Radio, Users, DoorOpen, UserCheck, Clock, Activity } from 'lucide-react';
 import { cn } from '@/lib/utils';
 
 interface RegistrationStats {

@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react';
-import { Plus, X, DoorOpen, Users, Building2 } from 'lucide-react';
+import { Plus, X, DoorOpen, Users } from 'lucide-react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { useAuthStore } from '@/store/authStore';
 import { useUIStore } from '@/store/uiStore';

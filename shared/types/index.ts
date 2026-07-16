@@ -146,7 +146,7 @@ export interface Registration {
   updatedAt: string;
 }
 
-export type RoomStatusType = 'ACTIVE' | 'FULL' | 'CLOSED' | 'ARCHIVED';
+export type RoomStatusType = 'AVAILABLE' | 'ACTIVE' | 'NEAR_CAPACITY' | 'FULL' | 'CLOSED' | 'ARCHIVED';
 
 export interface Room {
   id: string;

@@ -1,7 +1,7 @@
 import { useEffect, useState } from 'react';
 import { useHackathonStore } from '@/store/hackathonStore';
 import { api } from '@/lib/api';
-import { Users, DoorOpen, UserCheck, AlertTriangle, ClipboardList, Move, Activity } from 'lucide-react';
+import { Users, DoorOpen, UserCheck, AlertTriangle, Activity } from 'lucide-react';
 
 interface OpsMetrics {
   totalTeams: number;
