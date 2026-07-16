@@ -1,4 +1,5 @@
 import fs from 'fs';
+import { logger } from '../lib/logger';
 
 const FROM_ADDRESS = process.env.SMTP_FROM || 'Nexora <noreply@nexora.dev>';
 
@@ -17,10 +18,7 @@ export async function sendCertificateEmail(
 ): Promise<EmailResult> {
   const apiKey = process.env.RESEND_API_KEY;
   if (!apiKey) {
-    console.warn(
-      '[email] RESEND_API_KEY not set — skipping email to %s (dev mode)',
-      to,
-    );
+    logger.info(`[email] RESEND_API_KEY not set — skipping email to ${to} (dev mode)`);
     return { success: true, skipped: true };
   }
 

@@ -21,7 +21,6 @@ export const getSocket = (): Socket => {
     });
 
     socket.on('connect_error', (err) => {
-      console.error('[Socket] Connection error:', err.message);
       if (err.message === 'Invalid or expired token') {
         useAuthStore.getState().logout();
       }

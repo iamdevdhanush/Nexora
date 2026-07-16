@@ -31,7 +31,7 @@ import { api } from '@/lib/api';
 import { AuthUser, useAuthStore as useAuth } from '@/store/authStore';
 
 function Guard({ children }: { children: React.ReactNode }) {
-  const { isAuthenticated, user } = useAuth();
+  const { isAuthenticated } = useAuth();
 
   if (!isAuthenticated) {
     return <Navigate to="/auth" replace />;
@@ -55,7 +55,7 @@ function SuperAdminGuard({ children }: { children: React.ReactNode }) {
 }
 
 function AuthVerifier({ children }: { children: React.ReactNode }) {
-  const { token, isAuthenticated, setAuth, logout, user } = useAuth();
+  const { token, isAuthenticated, logout } = useAuth();
 
   useEffect(() => {
     if (token && isAuthenticated) {
@@ -69,7 +69,7 @@ function AuthVerifier({ children }: { children: React.ReactNode }) {
           logout();
         });
     }
-  }, []);
+  }, [token, isAuthenticated, logout]);
 
   return <>{children}</>;
 }
